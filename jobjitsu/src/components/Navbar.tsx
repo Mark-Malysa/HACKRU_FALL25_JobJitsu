@@ -76,7 +76,7 @@ export function Navbar() {
           text-decoration: none;
         }
         .nav-logo img {
-          height: 32px; /* Adjusted logo size */
+          height: 75px; /* Adjusted logo size */
           width: auto;
           margin-right: 0.5rem;
         }
@@ -163,7 +163,7 @@ export function Navbar() {
           <div className="nav-content">
             <Link href="/" className="nav-logo">
               <Image
-                src="https://placehold.co/100x32/0a0a0a/ff0000?text=JobJitsu"
+                src="logo.png"
                 alt="JobJitsu Logo"
               />
             </Link>
@@ -174,6 +174,7 @@ export function Navbar() {
               <Link href="/pricing" className="nav-link">Pricing</Link>
               <Link href="/faq" className="nav-link">FAQ</Link>
               <Link href="/resources" className="nav-link">Resources</Link>
+              <Link href="/practice" className="nav-link">Practice</Link>
             </div>
             
             <div className="hidden md:block">

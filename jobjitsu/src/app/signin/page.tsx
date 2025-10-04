@@ -8,7 +8,8 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import Link from "next/link";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useSession, useSupabaseClient } from "@supabase/auth-helpers-react";
 // Using lucide-react for modern, clean icons
 import { Mail, Lock, Eye, EyeOff, ArrowLeft, Github } from "lucide-react";
 
@@ -19,7 +20,63 @@ export default function SignIn() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const router = useRouter();
+  const session = useSession();
+  const supabase = useSupabaseClient();
+
+  // Check if user is already authenticated
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        console.log("Checking authentication...");
+        console.log("Session from hook:", session);
+        
+        // Wait a moment for session to be established
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        if (session) {
+          console.log("User already authenticated via hook, redirecting to practice");
+          router.push("/practice");
+          return;
+        }
+        
+        // Try to get session directly from Supabase
+        console.log("Checking session directly from Supabase...");
+        const { data: { session: currentSession }, error } = await supabase.auth.getSession();
+        
+        console.log("Direct session check result:", currentSession);
+        console.log("Error:", error);
+        
+        if (currentSession) {
+          console.log("User authenticated via direct check, redirecting to practice");
+          router.push("/practice");
+          return;
+        }
+        
+        // User is not authenticated, show signin form
+        console.log("User not authenticated, showing signin form");
+        setIsCheckingAuth(false);
+      } catch (error) {
+        console.error("Auth check error:", error);
+        setIsCheckingAuth(false);
+      }
+    };
+
+    checkAuth();
+  }, [session, supabase, router]);
+
+  // Show loading while checking authentication
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Checking authentication...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleEmailAuth = async () => {
     if (!email || !password) {
@@ -29,13 +86,13 @@ export default function SignIn() {
 
     setIsLoading(true);
     try {
-      const { error } = isSignUp
-        ? await supabase.auth.signUp({ email, password })
-        : await supabase.auth.signInWithPassword({ email, password });
+    const { error } = isSignUp
+      ? await supabase.auth.signUp({ email, password })
+      : await supabase.auth.signInWithPassword({ email, password });
 
-      if (error) {
-        toast.error(error.message);
-      } else {
+    if (error) {
+      toast.error(error.message);
+    } else {
         toast.success(isSignUp ? "Check your email to confirm your account!" : "Welcome back!");
         if (!isSignUp) {
           router.push("/practice");
@@ -51,6 +108,7 @@ export default function SignIn() {
   const handleGoogleAuth = async () => {
     setIsLoading(true);
     try {
+      console.log("Initiating Google OAuth...");
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -63,6 +121,7 @@ export default function SignIn() {
         toast.error(error.message);
       } else {
         console.log("Google OAuth initiated successfully");
+        console.log("Redirecting to:", `${window.location.origin}/auth/signin`);
       }
     } catch (error) {
       console.error("Google OAuth exception:", error);

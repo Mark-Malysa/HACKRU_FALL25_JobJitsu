@@ -64,6 +64,15 @@ export default function AuthSignIn() {
       console.log("AuthSignIn - Hash:", window.location.hash);
       console.log("AuthSignIn - Search:", window.location.search);
       
+      // If we have a session, process it regardless of OAuth callback detection
+      if (session) {
+        console.log("Session found, processing user");
+        await syncUserWithBackend(session.user);
+        router.replace("/practice");
+        setIsLoading(false);
+        return;
+      }
+      
       // If this is not an OAuth callback and no session, redirect to signin immediately
       if (!isOAuthCallback) {
         console.log("Not an OAuth callback, redirecting to signin");
