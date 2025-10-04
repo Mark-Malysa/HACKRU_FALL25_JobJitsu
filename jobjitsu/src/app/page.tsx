@@ -1,10 +1,11 @@
-// src/app/page.tsx (Updated with real avatar URLs)
+// src/app/page.tsx (Updated buttons to route to auth)
 "use client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";  // For routing
 
 export default function Home() {
   return (
@@ -20,13 +21,16 @@ export default function Home() {
             Simulate real interviews and get actionable, intelligent feedback for job applications.
           </p>
           <div className="flex space-x-4">
-            <Button className="button-primary rounded-full px-6">Try for free now! →</Button>
-            <Button variant="outline" className="rounded-full px-6">Explore pricing</Button>
+            <Link href="/auth/signin">
+              <Button className="button-primary rounded-full px-6">Try for free now! →</Button>
+            </Link>
+            <Link href="/pricing">  {/* Placeholder for pricing page */}
+              <Button variant="outline" className="rounded-full px-6">Explore pricing</Button>
+            </Link>
           </div>
         </div>
         <div className="md:w-1/2 relative">
           <div className="bg-gradient-to-br from-primary/20 to-accent/20 rounded-3xl p-4 shadow-soft">
-          { /* Home page image - REPLACE */ }
             <Image
               src="https://interviewer.ai/wp-content/uploads/2022/05/Landing-Page-Hero-Image.png"
               alt="AI Interview Simulation"
@@ -34,7 +38,7 @@ export default function Home() {
               height={633}
               className="rounded-2xl"
             />
-            {/* Overlay elements */}
+            {/* Overlay */}
             <div className="absolute bottom-4 right-4 bg-white rounded-full p-2 shadow">
               <Image
                 src="https://static.vecteezy.com/system/resources/previews/020/168/718/non_2x/smiling-female-student-flat-avatar-icon-with-green-dot-editable-default-persona-for-ux-ui-design-profile-character-picture-with-online-status-indicator-colorful-messaging-app-user-badge-vector.jpg"
@@ -89,7 +93,9 @@ export default function Home() {
       <section className="text-center space-y-4">
         <h2 className="text-3xl font-semibold">Ready to Level Up?</h2>
         <p className="text-lg text-secondary-foreground">Sign up today and start practicing for your dream job.</p>
-        <Button className="button-primary rounded-full px-6">Sign Up / Sign In</Button>
+        <Link href="/auth/signin">
+          <Button className="button-primary rounded-full px-6">Sign Up / Sign In</Button>
+        </Link>
       </section>
     </div>
   );

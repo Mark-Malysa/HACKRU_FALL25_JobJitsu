@@ -1,21 +1,22 @@
-// src/app/practice/page.tsx (Updated to use ModePicker for starting session via /session/start)
+// src/app/practice/page.tsx
 "use client";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ModePicker } from "@/components/ModePicker";
+import { useSupabaseClient, useSession } from "@supabase/auth-helpers-react";  // Added imports
 
 export default function Practice() {
   const router = useRouter();
+  const supabase = useSupabaseClient();
+  const session = useSession();
 
   useEffect(() => {
-    // TODO: Implement authentication check here (e.g., using NextAuth or Supabase).
-    // If user is not signed in, redirect to sign-in page or home.
-    // For example:
-    // const session = await getSession(); // From auth lib
-    // if (!session) router.push('/auth/signin');
-    // For now, just proceed (or redirect to google.com as placeholder).
-    router.push("https://google.com");
-  }, [router]);
+    if (!session) {
+      router.push("/auth/signin");  // Redirect if not authenticated
+    }
+  }, [session, router]);
+
+  if (!session) return null;  // Or loading spinner
 
   return (
     <div className="container mx-auto px-4 py-12 space-y-8">
