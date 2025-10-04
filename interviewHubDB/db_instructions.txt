@@ -130,14 +130,3 @@ Once confirmed, push your DB connection and helper functions to GitHub.
 3.
 4
 
-
-
-database user:mbmalysa_db_user, password Q0lQfHlsLxiHwO56
-
-from MongoDB website
-2. Install your driver
-Run the following on the command line
-Note: Use appropriate Python 3 executable
-python -m pip install "pymongo[srv]==3.12"
-
-connection string: mongodb+srv://mbmalysa_db_user:<db_password>@interviewhubcluster.qxym3ax.mongodb.net/?retryWrites=true&w=majority&appName=InterviewHubCluster
