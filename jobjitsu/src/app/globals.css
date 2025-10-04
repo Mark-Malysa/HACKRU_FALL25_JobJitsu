@@ -28,6 +28,7 @@ body {
   color: var(--foreground);
   background: var(--background);
   font-family: 'Inter', sans-serif;
+  overflow-x: hidden; /* Disable horizontal scrolling */
 }
 
 /* Soft shadows with red tint */
@@ -105,7 +106,7 @@ body {
   display: flex;
   overflow: hidden; /* Hide overflowing logos */
   white-space: nowrap; /* Prevent wrapping */
-  animation: logo-scroll 20s linear infinite; /* Smooth scrolling */
+  animation: logo-scroll 15s linear infinite; /* Increased speed */
 }
 
 /* Keyframe animation for logo scrolling */
@@ -119,8 +120,9 @@ body {
 }
 
 .scroll-container img {
-  height: 4rem; /* Adjust logo size */
-  margin-right: 1rem;
+  height: 3rem; /* Logo size */
+  width: auto; /* Maintain aspect ratio */
+  margin-right: 1rem; /* Spacing */
   transition: transform 0.3s ease;
 }
 
