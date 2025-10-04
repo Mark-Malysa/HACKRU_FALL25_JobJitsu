@@ -1,14 +1,14 @@
 import requests
 
 BASE_URL = "http://localhost:8000/api"
-email = "hartk2006@gmail.com"      # Use your desired test email
-password = "testpassword"       # Use your desired test password
+email = "jman41404@gmail.com"      # Use your desired test email
+password = "fuckmark"       # Use your desired test password
 
 response = requests.post(f"{BASE_URL}/auth/signup", params={"email": email, "password": password})
 print(response.status_code, response.text)
 
-TEST_EMAIL = "test@example.com"  # Change as needed
-TEST_PASSWORD = "testpassword"    # Change as needed
+TEST_EMAIL = "jman41404@gmail.com"  # Change as needed
+TEST_PASSWORD = "fuckmark"    # Change as needed
 
 def get_token():
     data = {"email": TEST_EMAIL, "password": TEST_PASSWORD}
@@ -71,6 +71,7 @@ def test_feedback(token, session_id):
 
 if __name__ == "__main__":
     token = get_token()
+    print("Token:", token)
     if not token:
         print("Failed to get token. Check credentials and try again.")
     else:
@@ -78,7 +79,8 @@ if __name__ == "__main__":
         start_result = test_start_session(token)
         session_id = start_result.get("session_id")
         questions = start_result.get("questions", [])
-
+        print("Session ID:", session_id)
+        print("Questions:", questions)
         # 2. Submit an answer (if questions exist)
         if session_id and questions:
             test_submit_answer(token, session_id, questions[0], "This is a sample answer.")

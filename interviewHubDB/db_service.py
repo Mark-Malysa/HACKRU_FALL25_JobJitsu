@@ -61,7 +61,7 @@ def get_next_question(session_id):
         dict or None: The next unanswered question, or None if all questions are answered
     """
     session = db.sessions.find_one({"_id": ObjectId(session_id)})
-    if not session:
+    if session is None:
         return None
     
     for q in session["questions"]:

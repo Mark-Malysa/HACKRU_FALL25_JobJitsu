@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from flask_login import current_user
 from services.auth_guard import get_current_user
 import sys
 import os
@@ -15,10 +16,11 @@ sessions = db.sessions if db is not None else None
 
 @router.post("/session/start")
 def start_session(role: str, company: str, current_user=Depends(get_current_user)):
-    if not sessions:
+    print(f"Starting session for user: {current_user}")
+    if sessions is None:
         raise HTTPException(status_code=500, detail="Database not configured")
-    
-    user_id = current_user["user"]["id"]
+
+    user_id = getattr(current_user, "id", None)
     new_session = session_schema()
     new_session.update({
         "user_id": user_id,
@@ -36,7 +38,7 @@ def start_session(role: str, company: str, current_user=Depends(get_current_user
 @router.post("/session/answer")
 def submit_answer(session_id: str, question: str, answer: str):
     session = sessions.find_one({"_id": ObjectId(session_id)})
-    if not session:
+    if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
 
     session["answers"].append({"question": question, "answer": answer})
@@ -47,7 +49,7 @@ def submit_answer(session_id: str, question: str, answer: str):
 @router.post("/session/followup")
 def followup(session_id: str):
     session = sessions.find_one({"_id": ObjectId(session_id)})
-    if not session:
+    if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
 
     qa_pairs = [(qa["question"], qa["answer"]) for qa in session["answers"]]
@@ -58,7 +60,7 @@ def followup(session_id: str):
 @router.post("/session/feedback")
 def feedback(session_id: str):
     session = sessions.find_one({"_id": ObjectId(session_id)})
-    if not session:
+    if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
 
     qa_pairs = [(qa["question"], qa["answer"]) for qa in session["answers"]]
