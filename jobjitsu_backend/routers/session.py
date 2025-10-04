@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from services.auth_guard import get_current_user
 from ...interviewHubDB.db_service import get_collection
-from services.gemini_service import generate_questions, generate_followup, generate_feedback
+from services.gemini_service import generate_questions, generate_followup, generate_feedback, extract_score
 from models.session import session_schema
 from datetime import datetime
 

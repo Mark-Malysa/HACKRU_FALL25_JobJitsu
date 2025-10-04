@@ -1,5 +1,6 @@
 import google.generativeai as genai
 import os
+import re
 
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
@@ -27,3 +28,7 @@ def generate_feedback(qa_history: list):
     model = genai.GenerativeModel("gemini-pro")
     response = model.generate_content(prompt)
     return response.text.strip()
+
+def extract_score(feedback_text: str):
+    match = re.search(r"(\d+)", feedback_text)
+    return int(match.group(1)) if match else None

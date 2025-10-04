@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Header
 from services.auth_service import signup_user, login_user, verify_token
-from services.db_service import db
+from ...interviewHubDB.db_service import db
 from datetime import datetime
 
 router = APIRouter()
