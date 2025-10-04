@@ -76,32 +76,59 @@ export default function Home() {
         <p className="text-lg text-muted-foreground">
           Prepare for interviews at FAANG and other leading companies.
         </p>
-        <div className="flex items-center space-x-6 overflow-x-auto py-4">
-          {/* Placeholder logos */}
+        <div className="scroll-container">
+          {/* Corrected placeholder logos */}
           <img
-            src="/public/faang-placeholder1.svg"
-            alt="Company Logo 1"
-            className="h-16 w-auto"
+            src="/meta.png"
+            alt="Meta"
           />
           <img
-            src="/public/faang-placeholder2.svg"
-            alt="Company Logo 2"
-            className="h-16 w-auto"
+            src="/amazon.png"
+            alt="Amazon Logo"
           />
           <img
-            src="/public/faang-placeholder3.svg"
-            alt="Company Logo 3"
-            className="h-16 w-auto"
+            src="/apple.png"
+            alt="Apple Logo"
           />
           <img
-            src="/public/faang-placeholder4.svg"
-            alt="Company Logo 4"
-            className="h-16 w-auto"
+            src="/google.png"
+            alt="Google Logo"
           />
           <img
-            src="/public/faang-placeholder5.svg"
-            alt="Company Logo 5"
-            className="h-16 w-auto"
+            src="/microsoft.png"
+            alt="Microsoft Logo"
+          />
+          <img
+            src="/tesla.png"
+            alt="Tesla Logo"
+          />
+          <img
+            src="/cisco.jpg"
+            alt="Cisco Logo"
+          />
+          <img
+            src="/doordash.png"
+            alt="DoorDash Logo"
+          />
+          <img
+            src="/IBM.png"
+            alt="IBM Logo"
+          />
+          <img
+            src="/nvidia.png"
+            alt="NVIDIA Logo"
+          />
+          <img
+            src="/xai.png"
+            alt="XAI Logo"
+          />
+          <img
+            src="/samsung.png"
+            alt="Samsung Logo"
+          />
+          <img
+            src="/logo.png"
+            alt="Our Logo"
           />
         </div>
       </section>
