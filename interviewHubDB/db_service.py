@@ -7,9 +7,17 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-# Initialize MongoDB connection
-client = MongoClient(os.getenv("MONGO_URI"))
-db = client[os.getenv("DB_NAME")]
+# Initialize MongoDB connection with error handling
+mongo_uri = os.getenv("MONGO_URI")
+db_name = os.getenv("DB_NAME")
+
+if not mongo_uri or not db_name:
+    print("Warning: MongoDB credentials not found. Database operations will not work.")
+    client = None
+    db = None
+else:
+    client = MongoClient(mongo_uri)
+    db = client[db_name]
 
 def create_session(user_id, role, company, q_list):
     """
@@ -24,6 +32,9 @@ def create_session(user_id, role, company, q_list):
     Returns:
         str: The ID of the created session
     """
+    if not db:
+        raise Exception("Database not configured")
+    
     session = {
         "user_id": user_id,
         "type": "recruiter_convo",
