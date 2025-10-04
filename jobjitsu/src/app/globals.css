@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #ffffff;
+  --foreground: #2c3e50;
+  --primary: #007bff;
+  --primary-foreground: #ffffff;
+  --secondary: #f8f9fa;
+  --secondary-foreground: #6c757d;
+  --accent: #17a2b8;
+  --accent-foreground: #ffffff;
+  --destructive: #dc3545;
+  --destructive-foreground: #ffffff;
+  --muted: #e9ecef;
+  --muted-foreground: #adb5bd;
+  --card: #ffffff;
+  --card-foreground: #2c3e50;
+  --popover: #ffffff;
+  --popover-foreground: #2c3e50;
+  --border: #dee2e6;
+  --input: #ffffff;
+  --ring: #007bff;
+}
+
+body {
+  color: var(--foreground);
+  background: linear-gradient(to bottom, #f0f4ff, #ffffff); /* Subtle blue-white gradient like Confetto */
+  font-family: 'Inter', sans-serif;
+}
+
+/* Soft shadows for cards/buttons */
+.shadow-soft {
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  transition: box-shadow 0.3s ease;
+}
+
+.shadow-soft:hover {
+  box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
+}
+
+/* Custom scrollbar (subtle) */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--muted);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--primary);
+  border-radius: 3px;
+}
+
+/* Button styles */
+.button-primary {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  border-radius: 0.375rem; /* Rounded like Bootstrap/Confetto */
+  font-weight: 500;
+  padding: 0.75rem 1.5rem;
+}
