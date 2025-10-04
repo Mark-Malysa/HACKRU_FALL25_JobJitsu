@@ -1,3 +1,4 @@
+from unittest import result
 from fastapi import APIRouter, HTTPException, Header
 from services.auth_service import signup_user, login_user, verify_token
 import sys
@@ -26,11 +27,15 @@ router = APIRouter()
 
 @router.post("/auth/signup")
 def signup(email: str, password: str):
+    print(f"Attempting to signup user with email: {email}")
     result = signup_user(email, password)
-    if not result or result.get("error"):
+    print(f"Signup result: {result}")
+    if not result or getattr(result, "user", None) is None:
         raise HTTPException(status_code=400, detail="Signup failed")
-    
+
     user = result.user
+    if not user:
+        raise HTTPException(status_code=400, detail="No user returned from Supabase")
     if not db.users.find_one({"email": user.email}):
         db.users.insert_one({
             "_id": user.id,
@@ -43,7 +48,7 @@ def signup(email: str, password: str):
 @router.post("/auth/login")
 def login(email: str, password: str):
     result = login_user(email, password)
-    if not result or result.get("error"):
+    if not result or getattr(result, "error", None):
         raise HTTPException(status_code=401, detail="Login failed")
     token = result.session.access_token
     return {
