@@ -25,9 +25,25 @@ from datetime import datetime
 
 router = APIRouter()
 
+
 @router.post("/auth/signup")
 def signup(email: str, password: str):
     print(f"Attempting to signup user with email: {email}")
+    # Check if user already exists in MongoDB
+    existing_user = db.users.find_one({"email": email})
+    if existing_user:
+        print("User already exists in DB, attempting login...")
+        login_result = login_user(email, password)
+        if not login_result or getattr(login_result, "session", None) is None:
+            raise HTTPException(status_code=401, detail="Login failed for existing user")
+        session = login_result.session
+        return {
+            "message": "User already exists. Logged in instead.",
+            "token": session.access_token,
+            "expires_at": session.expires_at,
+            "user": email
+        }
+    # If not, proceed with signup
     result = signup_user(email, password)
     print(f"Signup result: {result}")
     if not result or getattr(result, "user", None) is None:
@@ -36,12 +52,11 @@ def signup(email: str, password: str):
     user = result.user
     if not user:
         raise HTTPException(status_code=400, detail="No user returned from Supabase")
-    if not db.users.find_one({"email": user.email}):
-        db.users.insert_one({
-            "_id": user.id,
-            "email": user.email,
-            "created_at": datetime.utcnow()
-        })
+    db.users.insert_one({
+        "_id": user.id,
+        "email": user.email,
+        "created_at": datetime.utcnow()
+    })
 
     return {"message": "Signup successful", "user": user.email}
 
