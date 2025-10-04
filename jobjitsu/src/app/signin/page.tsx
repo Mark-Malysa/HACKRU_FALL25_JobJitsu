@@ -138,15 +138,6 @@ export default function SignIn() {
                 Continue with Google
               </Button>
               
-              <Button
-                onClick={handleGitHubAuth}
-                disabled={isLoading}
-                variant="outline"
-                className="w-full h-12 text-sm font-medium border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition-all duration-200"
-              >
-                <Github className="w-5 h-5 mr-3" />
-                Continue with GitHub
-              </Button>
             </div>
 
             {/* Divider */}
