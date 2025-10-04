@@ -18,7 +18,9 @@ else:
 def signup_user(email: str, password: str):
     if not supabase:
         return {"error": "Supabase not configured"}
+    print(f"Signing up user with email: {email}")
     response = supabase.auth.sign_up({"email": email, "password": password})
+    print(f"response received.")
     return response
 
 def login_user(email: str, password: str):
