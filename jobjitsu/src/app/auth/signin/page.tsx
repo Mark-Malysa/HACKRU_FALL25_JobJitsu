@@ -52,13 +52,40 @@ export default function AuthSignIn() {
       console.log("AuthSignIn - Current URL:", window.location.href);
       console.log("AuthSignIn - URL search params:", window.location.search);
       
-      // Try to get the current session
+      // Check if this is a page refresh (no URL params) vs OAuth callback
+      const urlParams = new URLSearchParams(window.location.search);
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const isOAuthCallback = urlParams.has('code') || urlParams.has('state') || hashParams.has('access_token');
+      
+      console.log("AuthSignIn - Is OAuth callback:", isOAuthCallback);
+      console.log("AuthSignIn - URL params:", Object.fromEntries(urlParams.entries()));
+      console.log("AuthSignIn - Hash params:", Object.fromEntries(hashParams.entries()));
+      console.log("AuthSignIn - Full URL:", window.location.href);
+      console.log("AuthSignIn - Hash:", window.location.hash);
+      console.log("AuthSignIn - Search:", window.location.search);
+      
+      // If this is not an OAuth callback and no session, redirect to signin immediately
+      if (!isOAuthCallback) {
+        console.log("Not an OAuth callback, redirecting to signin");
+        router.replace("/signin");
+        setIsLoading(false);
+        return;
+      }
+      
+      // If we reach here, it's an OAuth callback - wait for session
+      console.log("OAuth callback confirmed, processing...");
+      
+      // For OAuth callbacks, wait a bit for the session to be established
+      console.log("OAuth callback detected, waiting for session...");
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Try to get the current session after waiting
       const { data: { session: currentSession }, error } = await supabase.auth.getSession();
       console.log("AuthSignIn - Current session from getSession:", currentSession);
       console.log("AuthSignIn - Error:", error);
       
       if (currentSession) {
-        // User is authenticated, sync with backend
+        // User is authenticated
         console.log("User authenticated, syncing with backend");
         await syncUserWithBackend(currentSession.user);
         router.replace("/practice");
@@ -66,12 +93,14 @@ export default function AuthSignIn() {
         return;
       }
       
-      // Set up auth state change listener
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      // Set up auth state change listener for OAuth callback
+      let authStateHandled = false;
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
         console.log("AuthSignIn - Auth state change:", event, session);
-        if (event === 'SIGNED_IN' && session) {
+        if (event === 'SIGNED_IN' && session && !authStateHandled) {
+          authStateHandled = true;
           console.log("User signed in via auth state change, syncing with backend");
-          syncUserWithBackend(session.user);
+          await syncUserWithBackend(session.user);
           router.replace("/practice");
           setIsLoading(false);
         } else if (event === 'SIGNED_OUT') {
@@ -81,16 +110,23 @@ export default function AuthSignIn() {
         }
       });
 
-      // Wait a bit for the session to be established
-      console.log("No session found, waiting for auth state change...");
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      // Wait for OAuth callback to complete
+      console.log("OAuth callback detected, waiting for auth state change...");
+      await new Promise(resolve => setTimeout(resolve, 8000));
       
       // If still no session after waiting, redirect to signin
-      const { data: { session: finalSession } } = await supabase.auth.getSession();
-      if (!finalSession) {
-        console.log("Still no session after waiting, redirecting to signin");
-        router.replace("/signin");
-        setIsLoading(false);
+      if (!authStateHandled) {
+        const { data: { session: finalSession } } = await supabase.auth.getSession();
+        if (!finalSession) {
+          console.log("Still no session after OAuth callback, redirecting to signin");
+          router.replace("/signin");
+          setIsLoading(false);
+        } else {
+          console.log("Session found after waiting, syncing with backend");
+          await syncUserWithBackend(finalSession.user);
+          router.replace("/practice");
+          setIsLoading(false);
+        }
       }
 
       // Cleanup subscription
