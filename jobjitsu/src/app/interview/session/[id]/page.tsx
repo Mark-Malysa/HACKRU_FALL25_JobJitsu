@@ -1,4 +1,4 @@
-// src/app/interview/session/[id]/page.tsx (Updated to use new endpoints: next, answer, followup, feedback, complete)
+// src/app/interview/session/[id]/page.tsx (Updated for red/black theme)
 "use client";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -19,50 +19,50 @@ type Message = {
 };
 
 async function fetchNextQuestion(id: string) {
-  const res = await fetch(`/session/${id}/next`);  // Updated endpoint
+  const res = await fetch(`/session/${id}/next`);
   if (!res.ok) throw new Error("Failed to fetch next question");
-  return res.json();  // Assume { questionText, voiceUrl? }
+  return res.json();
 }
 
 async function submitAnswer({ id, questionText, userAnswerText }: { id: string; questionText: string; userAnswerText: string }) {
-  const res = await fetch(`/session/${id}/answer`, {  // Updated endpoint
+  const res = await fetch(`/session/${id}/answer`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ questionText, userAnswerText }),
   });
   if (!res.ok) throw new Error("Failed to submit answer");
-  return res.json();  // Assume success response
+  return res.json();
 }
 
 async function fetchFollowup(id: string) {
-  const res = await fetch(`/session/${id}/followup`, { method: "POST" });  // Updated endpoint
+  const res = await fetch(`/session/${id}/followup`, { method: "POST" });
   if (!res.ok) throw new Error("Failed to fetch followup");
-  return res.json();  // Assume { questionText, voiceUrl? }
+  return res.json();
 }
 
 async function fetchFeedback(id: string) {
-  const res = await fetch(`/session/${id}/feedback`, { method: "POST" });  // Updated endpoint
+  const res = await fetch(`/session/${id}/feedback`, { method: "POST" });
   if (!res.ok) throw new Error("Failed to fetch feedback");
-  return res.json();  // Assume { comments, rubric, score_overall }
+  return res.json();
 }
 
 async function completeSession(id: string) {
-  const res = await fetch(`/session/${id}/complete`, { method: "POST" });  // Updated endpoint
+  const res = await fetch(`/session/${id}/complete`, { method: "POST" });
   if (!res.ok) throw new Error("Failed to complete session");
-  return res.json();  // Assume summary
+  return res.json();
 }
 
 export default function SessionPage({ params }: { params: { id: string } }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [answer, setAnswer] = useState("");
   const [persona, setPersona] = useState<any>(null);
-  const [questionCount, setQuestionCount] = useState(0);  // Track for followup after 3
+  const [questionCount, setQuestionCount] = useState(0);
   const router = useRouter();
 
   const { data: nextQuestion, isLoading: loadingNext } = useQuery({
     queryKey: ["nextQuestion", params.id, questionCount],
     queryFn: () => fetchNextQuestion(params.id),
-    enabled: messages.length % 2 === 0,  // Fetch when waiting for question
+    enabled: messages.length % 2 === 0,
   });
 
   const mutation = useMutation({
@@ -86,9 +86,7 @@ export default function SessionPage({ params }: { params: { id: string } }) {
     }
   }, [nextQuestion]);
 
-  // Mock persona fetch (or from session start)
   useEffect(() => {
-    // Fetch persona if needed
     setPersona({ name: "Avery", bias_mode: "off" });
   }, []);
 
@@ -103,7 +101,6 @@ export default function SessionPage({ params }: { params: { id: string } }) {
     const summary = await completeSession(params.id);
     toast.info("Session completed!");
     router.push("/profile");
-    // Handle summary display if needed
   };
 
   useEffect(() => {
@@ -121,7 +118,7 @@ export default function SessionPage({ params }: { params: { id: string } }) {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-semibold text-primary">Interview Session</h1>
         <PersonaChip company="Google" role="SWE Intern" biasMode={persona?.bias_mode} />
-        <Button onClick={handleComplete} variant="destructive">
+        <Button onClick={handleComplete} variant="destructive" className="bg-destructive text-destructive-foreground">
           End Session
         </Button>
       </div>
@@ -136,7 +133,7 @@ export default function SessionPage({ params }: { params: { id: string } }) {
           value={answer}
           onChange={(e) => setAnswer(e.target.value)}
           placeholder="Type your answer… Use STAR method for best results."
-          className="min-h-[100px]"
+          className="min-h-[100px] bg-input border-border text-foreground"
         />
         <div className="flex justify-end space-x-2">
           <Button onClick={handleSubmit} disabled={mutation.isPending} className="button-primary">

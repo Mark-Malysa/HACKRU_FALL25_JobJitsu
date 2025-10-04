@@ -1,10 +1,11 @@
-// src/app/layout.tsx (updated)
+// src/app/layout.tsx (Update import to default)
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { Toaster } from "sonner";  // Assuming Sonner for toasts
+import { Toaster } from "sonner";
 
-import { Providers } from "@/components/Providers";  // New import
+import { Providers } from "@/components/Providers";
+import { Navbar } from "@/components/Navbar";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -21,8 +22,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <Providers>  {/* Wrap children here */}
-          {children}
+        <Providers>
+          <Navbar />
+          <main className="pt-16 bg-white">
+            {children}
+          </main>
           <Toaster />
         </Providers>
       </body>

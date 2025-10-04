@@ -6,6 +6,8 @@ from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
+print(f"MONGO_URI loaded: {os.getenv('MONGO_URI')}")
+print(f"DB_NAME loaded: {os.getenv('DB_NAME')}")
 
 app = FastAPI(
     title="JobJitsu API",
@@ -20,7 +22,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-)
+) 
 
 # Include routers
 app.include_router(auth.router, prefix="/api", tags=["Authentication"])
