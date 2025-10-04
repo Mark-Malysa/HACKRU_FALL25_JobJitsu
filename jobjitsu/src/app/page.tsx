@@ -21,7 +21,7 @@ export default function Home() {
             Simulate real interviews and get actionable, intelligent feedback for job applications.
           </p>
           <div className="flex space-x-4">
-            <Link href="/auth/signin">
+            <Link href="/signin">
               <Button className="button-primary rounded-full px-6">Try for free now! →</Button>
             </Link>
             <Link href="/pricing">  {/* Placeholder for pricing page */}
@@ -93,7 +93,7 @@ export default function Home() {
       <section className="text-center space-y-4">
         <h2 className="text-3xl font-semibold">Ready to Level Up?</h2>
         <p className="text-lg text-secondary-foreground">Sign up today and start practicing for your dream job.</p>
-        <Link href="/auth/signin">
+        <Link href="/signin">
           <Button className="button-primary rounded-full px-6">Sign Up / Sign In</Button>
         </Link>
       </section>

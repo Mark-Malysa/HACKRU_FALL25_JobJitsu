@@ -11,7 +11,7 @@ from bson import ObjectId
 import re
 
 router = APIRouter()
-sessions = db.sessions if db else None
+sessions = db.sessions if db is not None else None
 
 @router.post("/session/start")
 def start_session(role: str, company: str, current_user=Depends(get_current_user)):

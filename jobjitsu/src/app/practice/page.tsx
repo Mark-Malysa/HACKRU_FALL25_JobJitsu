@@ -11,8 +11,12 @@ export default function Practice() {
   const session = useSession();
 
   useEffect(() => {
+    console.log("Practice page - Session:", session);
     if (!session) {
+      console.log("No session found, redirecting to auth/signin");
       router.push("/auth/signin");  // Redirect if not authenticated
+    } else {
+      console.log("Session found, user is authenticated");
     }
   }, [session, router]);
 

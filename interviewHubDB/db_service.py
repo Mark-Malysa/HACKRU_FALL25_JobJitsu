@@ -32,7 +32,7 @@ def create_session(user_id, role, company, q_list):
     Returns:
         str: The ID of the created session
     """
-    if not db:
+    if db is None:
         raise Exception("Database not configured")
     
     session = {
