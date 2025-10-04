@@ -1,10 +1,7 @@
 from fastapi import FastAPI
+from ...interviewHubDB import db_service
 
 app = FastAPI()
-
-@app.get("/")
-async def root():
-    return {"message": "Hello World"}
 
 @app.post("/session/start")
 async def start_session(role, company):
