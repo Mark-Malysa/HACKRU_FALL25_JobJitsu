@@ -1,0 +1,38 @@
+Interview Hub – Hackathon Plan
+n Core Goal (Hackathon MVP)
+Recruiter Practice Simulator: - User picks a company + role (or general practice). - AI recruiter (Gemini)
+asks questions → ElevenLabs voices them. - User answers (typed for MVP). - AI recruiter grades
+response with rubric → shows score + feedback. - (Optional) profile page shows progress.
+n Team Roles
+1 Person A – Frontend/UI Lead: Build pages (Home, Interview Session, Profile), components
+(chat bubbles, scorecard), ElevenLabs audio integration.
+2 Person B – Backend/API Lead: FastAPI routes (/sessions, /next, /answers, /grade, /complete),
+MongoDB, Gemini + ElevenLabs integration.
+3 Person C – AI/Prompt + Data Lead: Write Gemini prompts, seed company/role templates,
+design grading rubric, tune AI feedback, mock analytics.
+n 24-Hour Schedule
+1 Hour 0–2: Setup repo, scaffold backend/frontend, draft prompts.
+2 Hour 3–6: Core loop v1 (static recruiter Q, mock grading).
+3 Hour 7–10: Integrate Gemini + ElevenLabs APIs.
+4 Hour 11–14: Add next-question flow + multiple personas.
+5 Hour 15–18: Polish feedback UI, session summary.
+6 Hour 19–21: Build Profile Page (optional, mock if needed).
+7 Hour 22–24: Final testing, polish, and pitch prep.
+n Must-Haves (MVP)
+1 Start interview session.
+2 Recruiter Q from Gemini.
+3 Recruiter voice via ElevenLabs.
+4 User answers → Gemini grades with rubric.
+5 Feedback displayed clearly in chat UI.
+n Nice-to-Have (Stretch)
+1 Profile dashboard with progress tracking.
+2 Bias Mode toggle (inclusive vs biased recruiter persona).
+3 Multiple recruiter personas (Big Tech vs Startup vs Consulting).
+4 Behavioral mode (general Q bank).
+5 OA mode (mocked coding problem).
+n Demo Story (2 minutes)
+1 “Students freeze with recruiters — Interview Hub fixes that.”
+2 Live demo: Start session → recruiter voice asks a question.
+3 User answers → instant AI feedback with rubric.
+4 Profile page: strengths + improvements.
+5 Vision: Expand to behavioral, OAs, and full prep platform
