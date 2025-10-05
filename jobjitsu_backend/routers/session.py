@@ -173,7 +173,7 @@ def submit_answer(session_id: str, question_number: int, answer: str):
         raise HTTPException(status_code=500, detail=f"Error saving answer: {str(e)}")
 
 @router.post("/session/{session_id}/followup")
-def followup(session_id: str, current_user=Depends(get_current_user)):
+async def followup(session_id: str, current_user=Depends(get_current_user)):
     print(f"Follow-up request for session_id: {session_id}")
     try:
         session_object_id = ObjectId(session_id)
@@ -218,6 +218,22 @@ def followup(session_id: str, current_user=Depends(get_current_user)):
         print(f"Error parsing followup response: {e}")
         followup_question = "That's interesting! Can you tell me more?"
 
+     # Generate TTS audio for the follow-up question
+    audio_b64 = None
+    try:
+        from services.elevenlabs_service import text_to_speech
+        audio_content = None
+        if followup_question and isinstance(followup_question, str) and len(followup_question) < 1000:
+            audio_content = await text_to_speech(followup_question)
+        if audio_content:
+            audio_b64 = base64.b64encode(audio_content).decode("utf-8")
+            print(f"[AUDIO DEBUG] Follow-up audio_b64 length: {len(audio_b64)}")
+        else:
+            print("[AUDIO DEBUG] No audio content generated for follow-up.")
+    except Exception as audio_err:
+        print(f"[AUDIO DEBUG] Error generating audio for follow-up: {audio_err}")
+        audio_b64 = None
+
     # Store the follow-up question in the session
     print(f"Storing follow-up question: {followup_question}")
     result = sessions.update_one({"_id": session_object_id}, {"$set": {"follow_up_question": followup_question, "follow_up_answer": ""}})
@@ -227,7 +243,7 @@ def followup(session_id: str, current_user=Depends(get_current_user)):
     updated_session = sessions.find_one({"_id": session_object_id})
     print(f"Updated session follow-up fields: follow_up_question={updated_session.get('follow_up_question')}, follow_up_answer={updated_session.get('follow_up_answer')}")
 
-    return {"follow_up": followup_question}
+    return {"follow_up": followup_question, "audio_b64": audio_b64}
 
 @router.post("/session/{session_id}/followup-answer")
 def submit_followup_answer(session_id: str, answer: str, current_user=Depends(get_current_user)):
@@ -287,24 +303,53 @@ async def feedback(session_id: str, current_user=Depends(get_current_user)):
     feedback_response = generate_feedback(qa_pairs)
     print(f"Feedback response: {feedback_response}")
 
-    # Parse the JSON response to extract score and description
+    # Parse the JSON response to extract score and description (robust)
     try:
-        # Clean up the response to extract JSON
-        json_match = re.search(r"\{.*\}", feedback_response, re.DOTALL)
+        raw = feedback_response.strip()
+        # 1) Strip markdown code fences if present
+        raw = re.sub(r"^```(?:json)?\n?|```$", "", raw, flags=re.MULTILINE).strip()
+        # 2) Extract first JSON object
+        json_match = re.search(r"\{[\s\S]*\}", raw)
+        feedback_data: dict
         if json_match:
-            clean_feedback = json_match.group(0).strip()
-            print(f"Extracted JSON: {clean_feedback}")
-            feedback_data = json.loads(clean_feedback)
-            print(f"Parsed feedback data: {feedback_data}")
+            candidate = json_match.group(0).strip()
+            try:
+                feedback_data = json.loads(candidate)
+            except json.JSONDecodeError:
+                # 3) Sometimes the JSON is double-encoded as a string; try to unescape
+                unescaped = candidate.encode('utf-8').decode('unicode_escape')
+                feedback_data = json.loads(unescaped)
         else:
-            print("No JSON found in feedback response, using fallback")
-            # Fallback if no JSON found
+            # No JSON object found; fall back to score extraction
             feedback_data = {
-                "score": extract_score(feedback_response) or 5,
-                "description": feedback_response
+                "score": extract_score(raw) or 5,
+                "description": raw
             }
-    except (json.JSONDecodeError, KeyError) as e:
-        print(f"Error parsing feedback response: {e}")
+
+        # 4) If description itself still contains a JSON block, parse nested
+        desc = feedback_data.get("description")
+        if isinstance(desc, str):
+            desc_stripped = re.sub(r"^```(?:json)?\n?|```$", "", desc, flags=re.MULTILINE).strip()
+            nested_match = re.search(r"\{[\s\S]*\}", desc_stripped)
+            if nested_match:
+                try:
+                    nested = json.loads(nested_match.group(0))
+                    if isinstance(nested, dict):
+                        feedback_data["description"] = nested.get("description", desc_stripped)
+                        if isinstance(nested.get("score"), (int, float)):
+                            feedback_data["score"] = nested["score"]
+                except Exception:
+                    pass
+
+        # Normalize types
+        if not isinstance(feedback_data.get("score"), (int, float)):
+            extracted = extract_score(json.dumps(feedback_data))
+            feedback_data["score"] = extracted or 5
+        if not isinstance(feedback_data.get("description"), str):
+            feedback_data["description"] = str(feedback_data.get("description", ""))
+
+    except Exception as e:
+        print(f"Error parsing feedback response (robust): {e}")
         print(f"Raw feedback response: {feedback_response}")
         feedback_data = {
             "score": extract_score(feedback_response) or 5,
