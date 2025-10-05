@@ -323,10 +323,10 @@ export default function Home() {
               <div className="hero-image-wrapper">
                 <div className="hero-image-card">
                   <Image
-                    src="https://placehold.co/520x320/ff0000/ffffff?text=Interview"
+                    src="interviewSample.png"
                     alt="AI Interview Simulation"
-                    width={HERO_WIDTH}
-                    height={HERO_HEIGHT}
+                    width={620}
+                    height={420}
                   />
                 </div>
               </div>
