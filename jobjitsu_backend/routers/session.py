@@ -386,4 +386,4 @@ def extract_score(feedback_text: str) -> float:
             return float(match.group(1))
 
     # Default score if no pattern found
-    return 7.0
+    return 5.0

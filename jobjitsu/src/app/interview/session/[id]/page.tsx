@@ -553,12 +553,6 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
             {/* Header */}
             <div className="interview-header">
               {/* <h1 className="interview-title">Interview Session</h1> */}
-              <div className="header-actions">
-                <PersonaChip company="Google" role="SWE Intern" biasMode={persona?.bias_mode} />
-                <Button onClick={handleComplete} variant="destructive" className="bg-destructive text-destructive-foreground">
-                   End Session
-                </Button>
-              </div>
             </div>
 
             {/* Chat Messages */}
@@ -625,10 +619,6 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
             {/* Feedback Section */}
             {messages.some((m) => m.feedback) && (
               <div className="feedback-section">
-                <ScoreCard 
-                  rubric={messages[messages.length - 1]?.feedback?.rubric || {}} 
-                  score_overall={messages[messages.length - 1]?.feedback?.score_overall || 0} 
-                />
               </div>
             )}
           </div>
