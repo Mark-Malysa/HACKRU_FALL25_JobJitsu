@@ -1,7 +1,7 @@
 // src/services/api.ts
 import { supabase } from '@/lib/supabase';
 
-const BACKEND_URL = "http://localhost:8000/api";
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000/api";
 
 export interface SessionData {
   session_id: string;
