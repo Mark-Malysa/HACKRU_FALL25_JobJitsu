@@ -1,3 +1,4 @@
+import base64
 import json
 from fastapi import APIRouter, Depends, HTTPException
 from flask_login import current_user
@@ -84,33 +85,43 @@ async def start_session(role: str, company: str, current_user=Depends(get_curren
     return {"message": "Session started", "session_id": session_id, "questions": new_session["questions"]}
 
 @router.get("/session/{session_id}/next")
-def get_next_question(session_id: str):
+async def get_next_question(session_id: str):
     """Get the next unanswered question from the session"""
     try:
         session = sessions.find_one({"_id": ObjectId(session_id)})
         if session is None:
             raise HTTPException(status_code=404, detail="Session not found")
-        
+
         questions = session.get("questions", {})
-        
+
         # Find the first question without an answer
         for i in range(1, 4):  # Assuming max 3 questions based on your structure
             question_key = f"question{i}"
             answer_key = f"answer{i}"
-            
+
             if question_key in questions and questions.get(answer_key, "").strip() == "":
+                question_text = questions[question_key]
+                print(f"[AUDIO DEBUG] Generating audio for question: {question_text}")
+                try:
+                    audio_content = await text_to_speech(question_text)
+                    audio_b64 = base64.b64encode(audio_content).decode("utf-8") if audio_content else None
+                    print(f"[AUDIO DEBUG] audio_b64 length: {len(audio_b64) if audio_b64 else 0}")
+                except Exception as audio_err:
+                    print(f"[AUDIO DEBUG] Error generating audio: {audio_err}")
+                    audio_b64 = None
                 return {
                     "question_number": i,
-                    "question": questions[question_key],
-                    "is_last_question": i == 3  # Assuming 3 total questions
+                    "question": question_text,
+                    "is_last_question": i == 3,  # Assuming 3 total questions
+                    "audio_b64": audio_b64
                 }
-        
+
         # If all questions are answered
         return {
             "message": "All questions completed",
             "is_complete": True
         }
-        
+
     except Exception as e:
         print(f"Error getting next question: {e}")
         raise HTTPException(status_code=500, detail=f"Error retrieving next question: {str(e)}")

@@ -14,11 +14,30 @@ import { use } from "react";
 import { apiService } from "@/services/api";
 import { useSession } from "@supabase/auth-helpers-react";
 
+// Utility to play audio from base64 string
+function playAudioFromBase64(base64String: string) {
+  const audioSrc = `data:audio/mp3;base64,${base64String}`;
+  const audio = new Audio(audioSrc);
+  audio.play().catch((err) => {
+    console.error("Audio playback error:", err);
+  });
+}
+
+
 type Message = {
   role: "recruiter" | "you";
   text: string;
   voiceUrl?: string | null;
   feedback?: any;
+};
+
+// Add type for nextQuestion to include audio_b64
+type NextQuestion = {
+  question_number: number;
+  question: string;
+  is_last_question: boolean;
+  is_complete?: boolean;
+  audio_b64?: string;
 };
 
 async function fetchNextQuestion(id: string, session: any) {
@@ -49,6 +68,7 @@ async function completeSession(id: string) {
 
 
 
+
 export default function SessionPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const session = useSession();
@@ -60,7 +80,7 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
   const [isCompleted, setIsCompleted] = useState(false);
   const router = useRouter();
 
-  const { data: nextQuestion, isLoading: loadingNext } = useQuery({
+  const { data: nextQuestion, isLoading: loadingNext } = useQuery<NextQuestion>({
     queryKey: ["nextQuestion", id, questionCount],
     queryFn: () => fetchNextQuestion(id, session),
     enabled: messages.length % 2 === 0 && !!session && questionCount < 3 && !isFollowupPhase,
@@ -114,6 +134,16 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
       setMessages((m) => [...m, { role: "recruiter", text: nextQuestion.question, voiceUrl: null }]);
     }
   }, [nextQuestion, questionCount]);
+
+  // Play audio when nextQuestion.audio_b64 is present
+  useEffect(() => {
+    if (nextQuestion && nextQuestion.audio_b64) {
+      console.log("Playing audio for question...");
+      playAudioFromBase64(nextQuestion.audio_b64);
+    } else if (nextQuestion) {
+      console.log("No audio_b64 found in nextQuestion");
+    }
+  }, [nextQuestion]);
 
   useEffect(() => {
     setPersona({ name: "Avery", bias_mode: "off" });
