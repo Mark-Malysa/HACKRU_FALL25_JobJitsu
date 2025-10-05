@@ -175,6 +175,7 @@ export function Navbar() {
               <Link href="/faq" className="nav-link">FAQ</Link>
               <Link href="/resources" className="nav-link">Resources</Link>
               <Link href="/practice" className="nav-link">Practice</Link>
+              <Link href="/profile" className="nav-link">Profile</Link>
             </div>
             
             <div className="hidden md:block">
@@ -194,6 +195,8 @@ export function Navbar() {
             <Link href="/pricing" className="nav-link" onClick={() => setIsMenuOpen(false)}>Pricing</Link>
             <Link href="/faq" className="nav-link" onClick={() => setIsMenuOpen(false)}>FAQ</Link>
             <Link href="/resources" className="nav-link" onClick={() => setIsMenuOpen(false)}>Resources</Link>
+            <Link href="/practice" className="nav-link" onClick={() => setIsMenuOpen(false)}>Practice</Link>
+            <Link href="/profile" className="nav-link" onClick={() => setIsMenuOpen(false)}>Profile</Link>
             <Link href="/signin" className="primary-btn-nav" style={{marginTop: '2rem'}} onClick={() => setIsMenuOpen(false)}>Try for free &rarr;</Link>
         </div>
       </div>

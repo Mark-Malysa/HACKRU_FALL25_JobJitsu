@@ -79,11 +79,32 @@ class ApiService {
     }
   }
 
-  async submitAnswer(sessionId: string, question: string, answer: string): Promise<void> {
+  async getNextQuestion(sessionId: string, session?: any): Promise<{question_number: number, question: string, is_last_question: boolean, is_complete?: boolean}> {
     try {
-      const headers = await this.getAuthHeaders();
+      const headers = await this.getAuthHeaders(session);
       
-      const response = await fetch(`${BACKEND_URL}/session/answer?session_id=${encodeURIComponent(sessionId)}&question=${encodeURIComponent(question)}&answer=${encodeURIComponent(answer)}`, {
+      const response = await fetch(`${BACKEND_URL}/session/${sessionId}/next`, {
+        method: 'GET',
+        headers,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting next question:', error);
+      throw error;
+    }
+  }
+
+  async submitAnswer(sessionId: string, questionNumber: number, answer: string, session?: any): Promise<void> {
+    try {
+      const headers = await this.getAuthHeaders(session);
+      
+      const response = await fetch(`${BACKEND_URL}/session/${sessionId}/answer?question_number=${questionNumber}&answer=${encodeURIComponent(answer)}`, {
         method: 'POST',
         headers,
       });
@@ -98,11 +119,11 @@ class ApiService {
     }
   }
 
-  async getFollowup(sessionId: string): Promise<string> {
+  async getFollowup(sessionId: string, session?: any): Promise<{ follow_up: string; audio_b64?: string }> {
     try {
-      const headers = await this.getAuthHeaders();
+      const headers = await this.getAuthHeaders(session);
       
-      const response = await fetch(`${BACKEND_URL}/session/followup?session_id=${encodeURIComponent(sessionId)}`, {
+      const response = await fetch(`${BACKEND_URL}/session/${sessionId}/followup`, {
         method: 'POST',
         headers,
       });
@@ -113,18 +134,39 @@ class ApiService {
       }
 
       const data = await response.json();
-      return data.follow_up;
+      console.log('ApiService.getFollowup raw:', data);
+      // Return as-is to avoid key mismatch issues
+      return data;
     } catch (error) {
       console.error('Error getting followup:', error);
       throw error;
     }
   }
 
-  async getFeedback(sessionId: string): Promise<{ feedback: string; score: number }> {
+  async submitFollowupAnswer(sessionId: string, answer: string, session?: any): Promise<void> {
     try {
-      const headers = await this.getAuthHeaders();
+      const headers = await this.getAuthHeaders(session);
       
-      const response = await fetch(`${BACKEND_URL}/session/feedback?session_id=${encodeURIComponent(sessionId)}`, {
+      const response = await fetch(`${BACKEND_URL}/session/${sessionId}/followup-answer?answer=${encodeURIComponent(answer)}`, {
+        method: 'POST',
+        headers,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('Error submitting follow-up answer:', error);
+      throw error;
+    }
+  }
+
+  async getFeedback(sessionId: string, session?: any): Promise<{ feedback: string; score: number }> {
+    try {
+      const headers = await this.getAuthHeaders(session);
+      
+      const response = await fetch(`${BACKEND_URL}/session/${sessionId}/feedback`, {
         method: 'POST',
         headers,
       });
