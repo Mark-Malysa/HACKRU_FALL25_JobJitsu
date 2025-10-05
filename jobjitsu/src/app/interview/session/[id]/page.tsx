@@ -14,30 +14,11 @@ import { use } from "react";
 import { apiService } from "@/services/api";
 import { useSession } from "@supabase/auth-helpers-react";
 
-// Utility to play audio from base64 string
-function playAudioFromBase64(base64String: string) {
-  const audioSrc = `data:audio/mp3;base64,${base64String}`;
-  const audio = new Audio(audioSrc);
-  audio.play().catch((err) => {
-    console.error("Audio playback error:", err);
-  });
-}
-
-
 type Message = {
   role: "recruiter" | "you";
   text: string;
   voiceUrl?: string | null;
   feedback?: any;
-};
-
-// Add type for nextQuestion to include audio_b64
-type NextQuestion = {
-  question_number: number;
-  question: string;
-  is_last_question: boolean;
-  is_complete?: boolean;
-  audio_b64?: string;
 };
 
 async function fetchNextQuestion(id: string, session: any) {
@@ -56,15 +37,7 @@ async function submitFollowupAnswer(id: string, answer: string, session: any) {
   return await apiService.submitFollowupAnswer(id, answer, session);
 }
 
-
-// Feedback type with audio_b64
-type FeedbackResponse = {
-  feedback: string;
-  score: number;
-  audio_b64?: string;
-};
-
-async function fetchFeedback(id: string, session: any): Promise<FeedbackResponse> {
+async function fetchFeedback(id: string, session: any) {
   return await apiService.getFeedback(id, session);
 }
 
@@ -73,7 +46,6 @@ async function completeSession(id: string) {
   if (!res.ok) throw new Error("Failed to complete session");
   return res.json();
 }
-
 
 
 
@@ -88,7 +60,7 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
   const [isCompleted, setIsCompleted] = useState(false);
   const router = useRouter();
 
-  const { data: nextQuestion, isLoading: loadingNext } = useQuery<NextQuestion>({
+  const { data: nextQuestion, isLoading: loadingNext } = useQuery({
     queryKey: ["nextQuestion", id, questionCount],
     queryFn: () => fetchNextQuestion(id, session),
     enabled: messages.length % 2 === 0 && !!session && questionCount < 3 && !isFollowupPhase,
@@ -122,18 +94,10 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
           // First submit the follow-up answer
           await submitFollowupAnswer(id, answer, session);
           console.log("Follow-up answer submitted successfully");
-
+          
           // Then generate feedback
           const feedback = await fetchFeedback(id, session);
           setMessages((m) => [...m, { role: "recruiter", text: `Here's your interview feedback (Score: ${feedback.score}/10):\n\n${feedback.feedback}`, feedback }]);
-
-          // Play feedback audio if present
-          if (feedback.audio_b64) {
-            console.log("Playing feedback audio...");
-            playAudioFromBase64(feedback.audio_b64);
-          } else {
-            console.log("No audio_b64 found in feedback");
-          }
         } catch (error) {
           console.error("Error submitting follow-up answer or fetching feedback:", error);
         }
@@ -150,16 +114,6 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
       setMessages((m) => [...m, { role: "recruiter", text: nextQuestion.question, voiceUrl: null }]);
     }
   }, [nextQuestion, questionCount]);
-
-  // Play audio when nextQuestion.audio_b64 is present
-  useEffect(() => {
-    if (nextQuestion && nextQuestion.audio_b64) {
-      console.log("Playing audio for question...");
-      playAudioFromBase64(nextQuestion.audio_b64);
-    } else if (nextQuestion) {
-      console.log("No audio_b64 found in nextQuestion");
-    }
-  }, [nextQuestion]);
 
   useEffect(() => {
     setPersona({ name: "Avery", bias_mode: "off" });
@@ -188,9 +142,20 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [answer]);
 
-
-  // Instead of hiding the chatbox, show a spinner overlay or disable input when loadingNext
-  // We'll use a loading overlay inside the chat container
+  if (loadingNext) {
+    return (
+      <div className="interview-body">
+        <div className="interview-container">
+          <div className="content-wrapper">
+            <div className="loading-card">
+              <div className="loading-spinner"></div>
+              <p className="loading-text">Loading interview session...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
