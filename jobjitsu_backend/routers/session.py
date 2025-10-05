@@ -1,7 +1,7 @@
 import json
 from fastapi import APIRouter, Depends, HTTPException
 from flask_login import current_user
-from jobjitsu_backend.services.elevenlabs_service import text_to_speech
+from services.elevenlabs_service import text_to_speech
 from services.auth_guard import get_current_user
 import sys
 import os

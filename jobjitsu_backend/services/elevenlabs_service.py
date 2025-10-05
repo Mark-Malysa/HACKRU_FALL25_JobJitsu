@@ -6,7 +6,7 @@ load_dotenv()
 
 ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
 # Choose a voice ID from ElevenLabs' voice library
-VOICE_ID = "XW70ikSsadUbinwLMZ5w" # Example voice ID
+VOICE_ID = "XW70ikSsadUbinwLMZ5w" # Example voice 
 
 
 
