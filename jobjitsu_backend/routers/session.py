@@ -278,7 +278,7 @@ def submit_followup_answer(session_id: str, answer: str, current_user=Depends(ge
     except Exception as e:
         print(f"Error saving follow-up answer: {e}")
         raise HTTPException(status_code=500, detail=f"Error saving follow-up answer: {str(e)}")
-
+    
 @router.post("/session/{session_id}/feedback")
 
 async def feedback(session_id: str, current_user=Depends(get_current_user)):
