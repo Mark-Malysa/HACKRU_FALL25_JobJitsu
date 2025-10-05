@@ -314,6 +314,10 @@ async def feedback(session_id: str, current_user=Depends(get_current_user)):
         feedback_data: dict
         if json_match:
             candidate = json_match.group(0).strip()
+            candidate = candidate.replace("\r\n", "\n")
+            candidate = re.sub(r'(?<!\\)\n', r'\\n', candidate)
+            candidate = re.sub(r'(?<!\\)\t', r'\\t', candidate)
+
             try:
                 feedback_data = json.loads(candidate)
             except json.JSONDecodeError:
