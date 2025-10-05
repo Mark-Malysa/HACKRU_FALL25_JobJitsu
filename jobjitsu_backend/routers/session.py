@@ -354,7 +354,7 @@ async def feedback(session_id: str, current_user=Depends(get_current_user)):
         print(f"Raw feedback response: {feedback_response}")
         feedback_data = {
             "score": extract_score(feedback_response) or 5,
-            "description": feedback_response
+            "description": re.search(r'"description":\s*"([^"]*(?:"[^"]*)*)"', raw, re.DOTALL).group(1) if re.search(r'"description":\s*"([^"]*(?:"[^"]*)*)"', raw, re.DOTALL) else raw
         }
 
     # SKIP TTS for feedback: do not generate audio for feedback
