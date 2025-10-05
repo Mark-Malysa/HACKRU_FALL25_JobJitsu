@@ -1,8 +1,9 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { Briefcase, Code, BrainCircuit, Loader2, Building, User } from "lucide-react";
+import { Briefcase, Code, BrainCircuit, Loader2, Building, User, CheckCircle, AlertCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useSession, useSupabaseClient } from "@supabase/auth-helpers-react";
+import { apiService, SessionData } from "@/services/api";
 
 
 export default function Practice() {
@@ -12,23 +13,47 @@ export default function Practice() {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [role, setRole] = useState("");
   const [company, setCompany] = useState("");
+  const [isStartingSession, setIsStartingSession] = useState(false);
+  const [sessionData, setSessionData] = useState<SessionData | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleStartSession = () => {
+  const handleStartSession = async () => {
     if (!role || !company) {
-      alert("Please enter both a role and a company.");
+      setError("Please enter both a role and a company.");
       return;
     }
-    console.log("Starting session for:", { role, company });
-    // Add logic to start the interview session here
+
+    setIsStartingSession(true);
+    setError(null);
+
+    try {
+      console.log("Starting session for:", { role, company });
+      console.log("Current user session:", session);
+      const sessionData = await apiService.startSession(role, company, session);
+      console.log("Session started successfully:", sessionData);
+      
+      setSessionData(sessionData);
+      
+      // Navigate to the interview session page
+      router.push(`/interview/session/${sessionData.session_id}`);
+    } catch (error) {
+      console.error("Error starting session:", error);
+      setError(error instanceof Error ? error.message : "Failed to start session. Please try again.");
+    } finally {
+      setIsStartingSession(false);
+    }
   };
 
   useEffect(() => {
     const checkAuth = async () => {
       console.log("Practice page - Session:", session);
+      console.log("Practice page - Session type:", typeof session);
+      console.log("Practice page - Session keys:", session ? Object.keys(session) : 'null');
       
       // If we already have a session, we're good
       if (session) {
         console.log("Session found, user is authenticated");
+        console.log("Session access_token:", session.access_token);
         setIsCheckingAuth(false);
         return;
       }
@@ -38,6 +63,8 @@ export default function Practice() {
       const { data: { session: currentSession }, error } = await supabase.auth.getSession();
       
       console.log("Practice page - Direct session check:", currentSession);
+      console.log("Practice page - Direct session type:", typeof currentSession);
+      console.log("Practice page - Direct session keys:", currentSession ? Object.keys(currentSession) : 'null');
       console.log("Practice page - Error:", error);
       
       if (currentSession) {
@@ -277,7 +304,40 @@ export default function Practice() {
                   />
                 </div>
               </div>
-              <button onClick={handleStartSession} className="start-session-btn">Start Session</button>
+              {error && (
+                <div className="error-message" style={{
+                  background: '#ff4444',
+                  color: 'white',
+                  padding: '0.75rem',
+                  borderRadius: '8px',
+                  marginBottom: '1rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <AlertCircle size={16} />
+                  {error}
+                </div>
+              )}
+              
+              <button 
+                onClick={handleStartSession} 
+                disabled={isStartingSession}
+                className="start-session-btn"
+                style={{
+                  opacity: isStartingSession ? 0.7 : 1,
+                  cursor: isStartingSession ? 'not-allowed' : 'pointer'
+                }}
+              >
+                {isStartingSession ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" style={{ marginRight: '0.5rem' }} />
+                    Starting Session...
+                  </>
+                ) : (
+                  'Start Session'
+                )}
+              </button>
             </div>
 
             <h2 className="section-title">More Practice Modes</h2>
