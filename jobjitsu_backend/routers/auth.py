@@ -1,6 +1,7 @@
 from unittest import result
-from fastapi import APIRouter, HTTPException, Header
+from fastapi import APIRouter, HTTPException, Header, Depends
 from services.auth_service import signup_user, login_user, verify_token
+from services.auth_guard import get_current_user
 import sys
 import os
 from dotenv import load_dotenv
@@ -135,6 +136,84 @@ def sync_user(user_data: dict):
             
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to sync user: {str(e)}")
+
+@router.get("/user/stats")
+def get_user_stats(current_user=Depends(get_current_user)):
+    """Get user statistics and recent sessions"""
+    try:
+        if db is None:
+            raise HTTPException(status_code=500, detail="Database not configured")
+        
+        # Extract user ID from current_user
+        user_id = None
+        if hasattr(current_user, 'user') and hasattr(current_user.user, 'id'):
+            user_id = current_user.user.id
+        elif hasattr(current_user, 'id'):
+            user_id = current_user.id
+        elif hasattr(current_user, 'user_id'):
+            user_id = current_user.user_id
+        
+        if not user_id:
+            raise HTTPException(status_code=400, detail="User ID not found")
+        
+        print(f"Getting stats for user: {user_id}")
+        
+        # Get all sessions for this user
+        sessions_collection = db.sessions
+        user_sessions = list(sessions_collection.find({"user_id": user_id}).sort("created_at", -1))
+        
+        print(f"Found {len(user_sessions)} sessions for user")
+        
+        # Calculate statistics
+        total_sessions = len(user_sessions)
+        scores = []
+        recent_sessions = []
+        
+        for session in user_sessions:
+            # Extract feedback score if available
+            if session.get('feedback') and isinstance(session['feedback'], dict):
+                score = session['feedback'].get('score', 0)
+                if score > 0:
+                    scores.append(score)
+            
+            # Prepare session data for recent sessions (limit to 10)
+            if len(recent_sessions) < 10:
+                session_data = {
+                    "_id": str(session['_id']),
+                    "user_id": session.get('user_id'),
+                    "role": session.get('role', 'Unknown'),
+                    "company": session.get('company', 'Unknown'),
+                    "created_at": session.get('created_at', datetime.utcnow()).isoformat(),
+                    "follow_up_question": session.get('follow_up_question'),
+                    "follow_up_answer": session.get('follow_up_answer')
+                }
+                
+                # Add feedback if available
+                if session.get('feedback'):
+                    if isinstance(session['feedback'], dict):
+                        session_data['feedback'] = session['feedback']
+                    else:
+                        # Handle case where feedback is stored as string
+                        session_data['feedback'] = {"score": 0, "description": str(session['feedback'])}
+                
+                recent_sessions.append(session_data)
+        
+        # Calculate averages
+        average_score = sum(scores) / len(scores) if scores else 0
+        best_score = max(scores) if scores else 0
+        
+        print(f"User stats: total={total_sessions}, avg={average_score}, best={best_score}")
+        
+        return {
+            "totalSessions": total_sessions,
+            "averageScore": round(average_score, 1),
+            "bestScore": best_score,
+            "recentSessions": recent_sessions
+        }
+        
+    except Exception as e:
+        print(f"Error getting user stats: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get user stats: {str(e)}")
 
 # Note: OAuth authentication is handled by Supabase on the frontend
 # This backend syncs OAuth users with MongoDB for session management
