@@ -56,7 +56,15 @@ async function submitFollowupAnswer(id: string, answer: string, session: any) {
   return await apiService.submitFollowupAnswer(id, answer, session);
 }
 
-async function fetchFeedback(id: string, session: any) {
+
+// Feedback type with audio_b64
+type FeedbackResponse = {
+  feedback: string;
+  score: number;
+  audio_b64?: string;
+};
+
+async function fetchFeedback(id: string, session: any): Promise<FeedbackResponse> {
   return await apiService.getFeedback(id, session);
 }
 
@@ -114,10 +122,18 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
           // First submit the follow-up answer
           await submitFollowupAnswer(id, answer, session);
           console.log("Follow-up answer submitted successfully");
-          
+
           // Then generate feedback
           const feedback = await fetchFeedback(id, session);
           setMessages((m) => [...m, { role: "recruiter", text: `Here's your interview feedback (Score: ${feedback.score}/10):\n\n${feedback.feedback}`, feedback }]);
+
+          // Play feedback audio if present
+          if (feedback.audio_b64) {
+            console.log("Playing feedback audio...");
+            playAudioFromBase64(feedback.audio_b64);
+          } else {
+            console.log("No audio_b64 found in feedback");
+          }
         } catch (error) {
           console.error("Error submitting follow-up answer or fetching feedback:", error);
         }
@@ -172,20 +188,9 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [answer]);
 
-  if (loadingNext) {
-    return (
-      <div className="interview-body">
-        <div className="interview-container">
-          <div className="content-wrapper">
-            <div className="loading-card">
-              <div className="loading-spinner"></div>
-              <p className="loading-text">Loading interview session...</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+
+  // Instead of hiding the chatbox, show a spinner overlay or disable input when loadingNext
+  // We'll use a loading overlay inside the chat container
 
   return (
     <>
