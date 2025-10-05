@@ -314,10 +314,6 @@ async def feedback(session_id: str, current_user=Depends(get_current_user)):
         feedback_data: dict
         if json_match:
             candidate = json_match.group(0).strip()
-            candidate = candidate.replace("\r\n", "\n")
-            candidate = re.sub(r'(?<!\\)\n', r'\\n', candidate)
-            candidate = re.sub(r'(?<!\\)\t', r'\\t', candidate)
-
             try:
                 feedback_data = json.loads(candidate)
             except json.JSONDecodeError:
@@ -327,8 +323,8 @@ async def feedback(session_id: str, current_user=Depends(get_current_user)):
         else:
             # No JSON object found; fall back to score extraction
             feedback_data = {
-                "score": extract_score(feedback_response) or 5,
-                "description": feedback_response
+                "score": extract_score(raw) or 5,
+                "description": raw
             }
 
         # 4) If description itself still contains a JSON block, parse nested
@@ -382,8 +378,7 @@ def extract_score(feedback_text: str) -> float:
         r'(\d+(?:\.\d+)?)/10',
         r'Score:\s*(\d+(?:\.\d+)?)',
         r'score[:\s]*(\d+(?:\.\d+)?)',
-        r'(\d+(?:\.\d+)?)\s*out\s*of\s*10',
-        r'["\']?score["\']?[:\s]*(\d+(?:\.\d+)?)'
+        r'(\d+(?:\.\d+)?)\s*out\s*of\s*10'
     ]
  
     for pattern in score_patterns:
