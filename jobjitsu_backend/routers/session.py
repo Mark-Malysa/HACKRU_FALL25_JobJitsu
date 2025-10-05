@@ -303,8 +303,9 @@ async def feedback(session_id: str, current_user=Depends(get_current_user)):
     feedback_response = generate_feedback(qa_pairs)
     print(f"Feedback response: {feedback_response}")
 
+
     # Parse the JSON response to extract score and description (robust)
-    try:
+    try: 
         raw = feedback_response.strip()
         # 1) Strip markdown code fences if present
         raw = re.sub(r"^```(?:json)?\n?|```$", "", raw, flags=re.MULTILINE).strip()
