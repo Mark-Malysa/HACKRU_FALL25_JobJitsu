@@ -323,8 +323,8 @@ async def feedback(session_id: str, current_user=Depends(get_current_user)):
         else:
             # No JSON object found; fall back to score extraction
             feedback_data = {
-                "score": extract_score(raw) or 5,
-                "description": raw
+                "score": extract_score(feedback_response) or 5,
+                "description": feedback_response
             }
 
         # 4) If description itself still contains a JSON block, parse nested
