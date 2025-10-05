@@ -79,9 +79,9 @@ class ApiService {
     }
   }
 
-  async getNextQuestion(sessionId: string): Promise<{question_number: number, question: string, is_last_question: boolean, is_complete?: boolean}> {
+  async getNextQuestion(sessionId: string, session?: any): Promise<{question_number: number, question: string, is_last_question: boolean, is_complete?: boolean}> {
     try {
-      const headers = await this.getAuthHeaders();
+      const headers = await this.getAuthHeaders(session);
       
       const response = await fetch(`${BACKEND_URL}/session/${sessionId}/next`, {
         method: 'GET',
@@ -100,9 +100,9 @@ class ApiService {
     }
   }
 
-  async submitAnswer(sessionId: string, questionNumber: number, answer: string): Promise<void> {
+  async submitAnswer(sessionId: string, questionNumber: number, answer: string, session?: any): Promise<void> {
     try {
-      const headers = await this.getAuthHeaders();
+      const headers = await this.getAuthHeaders(session);
       
       const response = await fetch(`${BACKEND_URL}/session/${sessionId}/answer?question_number=${questionNumber}&answer=${encodeURIComponent(answer)}`, {
         method: 'POST',
@@ -119,9 +119,9 @@ class ApiService {
     }
   }
 
-  async getFollowup(sessionId: string): Promise<string> {
+  async getFollowup(sessionId: string, session?: any): Promise<string> {
     try {
-      const headers = await this.getAuthHeaders();
+      const headers = await this.getAuthHeaders(session);
       
       const response = await fetch(`${BACKEND_URL}/session/${sessionId}/followup`, {
         method: 'POST',
@@ -141,9 +141,9 @@ class ApiService {
     }
   }
 
-  async getFeedback(sessionId: string): Promise<{ feedback: string; score: number }> {
+  async getFeedback(sessionId: string, session?: any): Promise<{ feedback: string; score: number }> {
     try {
-      const headers = await this.getAuthHeaders();
+      const headers = await this.getAuthHeaders(session);
       
       const response = await fetch(`${BACKEND_URL}/session/${sessionId}/feedback`, {
         method: 'POST',

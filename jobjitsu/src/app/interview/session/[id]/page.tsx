@@ -11,6 +11,8 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { use } from "react";
+import { apiService } from "@/services/api";
+import { useSession } from "@supabase/auth-helpers-react";
 
 type Message = {
   role: "recruiter" | "you";
@@ -19,32 +21,20 @@ type Message = {
   feedback?: any;
 };
 
-async function fetchNextQuestion(id: string) {
-  const res = await fetch(`/session/${id}/next`);
-  if (!res.ok) throw new Error("Failed to fetch next question");
-  return res.json();
+async function fetchNextQuestion(id: string, session: any) {
+  return await apiService.getNextQuestion(id, session);
 }
 
-async function submitAnswer({ id, questionText, userAnswerText }: { id: string; questionText: string; userAnswerText: string }) {
-  const res = await fetch(`/session/${id}/answer`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ questionText, userAnswerText }),
-  });
-  if (!res.ok) throw new Error("Failed to submit answer");
-  return res.json();
+async function submitAnswer({ id, questionNumber, userAnswerText, session }: { id: string; questionNumber: number; userAnswerText: string; session: any }) {
+  return await apiService.submitAnswer(id, questionNumber, userAnswerText, session);
 }
 
-async function fetchFollowup(id: string) {
-  const res = await fetch(`/session/${id}/followup`, { method: "POST" });
-  if (!res.ok) throw new Error("Failed to fetch followup");
-  return res.json();
+async function fetchFollowup(id: string, session: any) {
+  return await apiService.getFollowup(id, session);
 }
 
-async function fetchFeedback(id: string) {
-  const res = await fetch(`/session/${id}/feedback`, { method: "POST" });
-  if (!res.ok) throw new Error("Failed to fetch feedback");
-  return res.json();
+async function fetchFeedback(id: string, session: any) {
+  return await apiService.getFeedback(id, session);
 }
 
 async function completeSession(id: string) {
@@ -55,6 +45,7 @@ async function completeSession(id: string) {
 
 export default function SessionPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const session = useSession();
   const [messages, setMessages] = useState<Message[]>([]);
   const [answer, setAnswer] = useState("");
   const [persona, setPersona] = useState<any>(null);
@@ -63,8 +54,8 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
 
   const { data: nextQuestion, isLoading: loadingNext } = useQuery({
     queryKey: ["nextQuestion", id, questionCount],
-    queryFn: () => fetchNextQuestion(id),
-    enabled: messages.length % 2 === 0,
+    queryFn: () => fetchNextQuestion(id, session),
+    enabled: messages.length % 2 === 0 && !!session,
   });
 
   const mutation = useMutation({
@@ -74,17 +65,17 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
       setQuestionCount((prev) => prev + 1);
       toast.success("Answer submitted!");
       if (questionCount + 1 === 3) {
-        const followup = await fetchFollowup(id);
-        setMessages((m) => [...m, { role: "recruiter", text: followup.questionText, voiceUrl: followup.voiceUrl }]);
+        const followup = await fetchFollowup(id, session);
+        setMessages((m) => [...m, { role: "recruiter", text: followup, voiceUrl: null }]);
       }
-      const feedback = await fetchFeedback(id);
-      setMessages((m) => [...m, { role: "recruiter", text: `Feedback: ${feedback.comments}`, feedback }]);
+      const feedback = await fetchFeedback(id, session);
+      setMessages((m) => [...m, { role: "recruiter", text: `Feedback: ${feedback.feedback}`, feedback }]);
     },
   });
 
   useEffect(() => {
     if (nextQuestion) {
-      setMessages((m) => [...m, { role: "recruiter", text: nextQuestion.questionText, voiceUrl: nextQuestion.voiceUrl }]);
+      setMessages((m) => [...m, { role: "recruiter", text: nextQuestion.question, voiceUrl: null }]);
     }
   }, [nextQuestion]);
 
@@ -96,7 +87,9 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
     if (!answer.trim()) return;
     const lastQ = messages[messages.length - 1]?.text;
     setMessages((m) => [...m, { role: "you", text: answer }]);
-    mutation.mutate({ id: id, questionText: lastQ, userAnswerText: answer });
+    // Get the current question number from the query data
+    const currentQuestionNumber = nextQuestion?.question_number || 1;
+    mutation.mutate({ id: id, questionNumber: currentQuestionNumber, userAnswerText: answer, session: session });
   };
 
   const handleComplete = async () => {

@@ -33,17 +33,20 @@ async def start_session(role: str, company: str, current_user=Depends(get_curren
 
     try:
         questions_list = generate_questions(role, company)
-        
+        print(questions_list)
         # Convert list to the JSON structure you showed
-        questions_dict = {}
-        for i, question in enumerate(questions_list[:3], 1):  # Limit to 3 questions
-            questions_dict[f"question{i}"] = question
-            questions_dict[f"answer{i}"] = ""  # Initialize empty answers
+        # questions_dict = {}
+        # for i, question in enumerate(questions_list[:3], 1):  # Limit to 3 questions
+        #     questions_dict[f"question{i}"] = question
+        #     questions_dict[f"answer{i}"] = ""  # Initialize empty answers
         
+        # new_session["questions"] = questions_dict
+
+        questions_dict = json.loads(questions_list)
         new_session["questions"] = questions_dict
         
         # Get the first question for text-to-speech
-        first_question_text = questions_list[0] if questions_list else "Hello, let's start the interview."
+        first_question_text = questions_dict[0]['question1'] if questions_dict[0] else "Hello, let's start the interview."
         audio_content = await text_to_speech(first_question_text)
     except Exception as e:
         print(f"Error generating questions or audio: {e}")
