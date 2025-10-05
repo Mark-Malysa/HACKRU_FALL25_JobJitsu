@@ -356,6 +356,21 @@ async def feedback(session_id: str, current_user=Depends(get_current_user)):
     except Exception as e:
         print(f"Error parsing feedback response (robust): {e}")
         print(f"Raw feedback response: {feedback_response}")
+        try:
+        # Strip code fences
+        cleaned = re.sub(r"^```(?:json)?\s*|\s*```$", "", feedback_response, flags=re.MULTILINE).strip()
+        # Extract score like: "score": 2
+        score_match = re.search(r'"score"\s*:\s*([0-9]+(?:\.[0-9]+)?)', cleaned)
+        # Extract description value between quotes, allowing newlines
+        desc_match = re.search(r'"description"\s*:\s*"([\s\S]*?)"\s*}', cleaned)
+        score_val = float(score_match.group(1)) if score_match else (extract_score(cleaned) or 5)
+        description_val = desc_match.group(1) if desc_match else cleaned
+        feedback_data = {"score": score_val, "description": description_val}
+        except Exception:
+            feedback_data = {
+                "score": extract_score(feedback_response) or 5,
+                "description": re.sub(r"^```(?:json)?\s*|\s*```$", "", feedback_response, flags=re.MULTILINE).strip(),
+            }
         feedback_data = {
             "score": extract_score(feedback_response) or 5,
             "description": feedback_response
