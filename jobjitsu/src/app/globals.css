@@ -1,0 +1,131 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #FAFAFA; /* white background */
+  --foreground: #000000; /* Black text for contrast */
+  --primary: #ff0000; /* Red accent */
+  --primary-foreground: #000000;
+  --secondary: #1a1a1a; /* Dark gray for cards */
+  --secondary-foreground: #cccccc; /* Light gray text */
+  --accent: #cc0000; /* Darker red for highlights */
+  --accent-foreground: #ffffff;
+  --destructive: #990000;
+  --destructive-foreground: #ffffff;
+  --muted: #333333;
+  --muted-foreground: #999999;
+  --card: #111111;
+  --card-foreground: #ffffff;
+  --popover: #111111;
+  --popover-foreground: #ffffff;
+  --border: #222222;
+  --input: #1a1a1a;
+  --ring: #ff0000;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: 'Inter', sans-serif;
+  overflow-x: hidden; /* Disable horizontal scrolling */
+}
+
+/* Soft shadows with red tint */
+.shadow-soft {
+  box-shadow: 0 0.125rem 0.25rem rgba(255, 0, 0, 0.1);
+  transition: box-shadow 0.3s ease;
+}
+
+.shadow-soft:hover {
+  box-shadow: 0 0.25rem 0.5rem rgba(255, 0, 0, 0.2);
+}
+
+/* Button styles */
+.button-primary {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  border-radius: 9999px;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+}
+
+/* Updated Dropdown Menu Styling */
+.dropdown-content {
+  background-color: var(--background);
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 12px rgba(255, 0, 0, 0.2); /* Red shadow */
+}
+
+.dropdown-item {
+  color: var(--foreground);
+  font-weight: 500;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  font-size: 1.25rem; /* Increased text size */
+  padding: 0.75rem 1rem; /* Adjusted padding for larger clickable area */
+}
+
+.dropdown-item:hover {
+  background-color: var(--primary);
+  color: var(--accent-foreground);
+}
+
+/* Hamburger Icon Styling */
+.button-outline {
+  border-color: var(--primary);
+  color: var(--primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.button-outline:hover {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+}
+
+/* Hamburger Menu Fix */
+.hamburger-menu {
+  background: none;
+  border: none;
+  padding: 0;
+  margin-left: 1rem; /* Move to the left */
+  width: 2.5rem; /* Increase size */
+  height: 2.5rem; /* Increase size */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hamburger-menu svg {
+  width: 2rem; /* Larger icon */
+  height: 2rem;
+  color: var(--primary);
+}
+
+/* Scrolling container styles */
+.scroll-container {
+  display: flex;
+  overflow: hidden; /* Hide overflowing logos */
+  white-space: nowrap; /* Prevent wrapping */
+  animation: logo-scroll 15s linear infinite; /* Increased speed */
+}
+
+/* Keyframe animation for logo scrolling */
+@keyframes logo-scroll {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.scroll-container img {
+  height: 3rem; /* Logo size */
+  width: auto; /* Maintain aspect ratio */
+  margin-right: 1rem; /* Spacing */
+  transition: transform 0.3s ease;
+}
+
+.scroll-container img:hover {
+  transform: scale(1.1); /* Slight zoom on hover */
+}

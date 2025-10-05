@@ -1,0 +1,132 @@
+Database Build Guide for Interview Hub
+ Goal
+Set up a MongoDB database to store interview sessions, questions, answers, and feedback for the recruiter
+simulation.
+ Step 1: Set Up MongoDB Atlas
+Go to https://www.mongodb.com/cloud/atlas and sign in with GitHub or Google.
+Click Build a Database → choose Free Tier (M0).
+Select AWS + us-east-1 (or nearest region).
+Create a cluster named InterviewHubCluster .
+Create a database user → copy username/password.
+Add your IP to the access list: 0.0.0.0/0 (for development).
+Once deployed, click Connect → Connect your application.
+Copy the connection string (something like):
+mongodb+srv://<username>:<password>@interviewhubcluster.mongodb.net/?
+retryWrites=true&w=majority
+ Step 2: Initialize Project Folder
+Create a new folder: interviewhub_db .
+Inside, create a virtual environment:
+python3 -m venv venv
+source venv/bin/activate
+Install dependencies:
+pip install pymongo python-dotenv
+Create a .env file:
+MONGO_URI=mongodb+srv://
+<username>:<password>@interviewhubcluster.mongodb.net/?
+1.
+2.
+3.
+4.
+5.
+6.
+7.
+8.
+1.
+2.
+3.
+4.
+1
+retryWrites=true&w=majority
+DB_NAME=interviewhub
+ Step 3: Define Collections & Schema
+Database: interviewhub
+1. users
+Stores basic user info.
+{
+"_id": "user123",
+"name": "Jane Doe",
+"email": "jane@rutgers.edu",
+"created_at": "2025-10-04"
+}
+2. sessions
+Each session = one interview.
+{
+"_id": "sess123",
+"user_id": "user123",
+"type": "recruiter_convo",
+"role": "Software Engineer Intern",
+"company": "Google",
+"status": "active",
+"questions": [
+{"index": 1, "text": "Tell me about yourself.", "answer": null, "feedback":
+{}},
+{"index": 2, "text": "Describe a challenge you faced.", "answer": null,
+"feedback": {}},
+{"index": 3, "text": "Why this company?", "answer": null, "feedback": {}}
+],
+"follow_up": {"question": null, "answer": null, "feedback": {}},
+"summary": {"score": null, "strengths": [], "improvements": [], "comment":
+null},
+"created_at": "...",
+"completed_at": null
+}
+2
+ Step 4: Create Helper Functions
+Create a file db_service.py with the following functions:
+from pymongo import MongoClient
+from datetime import datetime
+import os
+from dotenv import load_dotenv
+load_dotenv()
+client = MongoClient(os.getenv("MONGO_URI"))
+db = client[os.getenv("DB_NAME")]
+def create_session(user_id, role, company, q_list):
+session = {
+"user_id": user_id,
+"type": "recruiter_convo",
+"role": role,
+"company": company,
+"status": "active",
+"questions": q_list,
+"follow_up": {"question": None, "answer": None, "feedback": {}},
+"summary": {"score": None, "strengths": [], "improvements": [],
+"comment": None},
+"created_at": datetime.utcnow(),
+"completed_at": None
+}
+result = db.sessions.insert_one(session)
+return str(result.inserted_id)
+def get_next_question(session_id):
+s = db.sessions.find_one({"_id": session_id})
+for q in s["questions"]:
+if q["answer"] is None:
+return q
+return None
+def save_answer(session_id, index, answer):
+db.sessions.update_one(
+{"_id": session_id, "questions.index": index},
+{"$set": {"questions.$.answer": answer}}
+)
+def save_followup(session_id, question, answer):
+db.sessions.update_one(
+3
+{"_id": session_id},
+{"$set": {"follow_up": {"question": question, "answer": answer}}}
+)
+def save_feedback(session_id, feedback):
+db.sessions.update_one(
+{"_id": session_id},
+{"$set": {"summary": feedback, "status": "completed", "completed_at":
+datetime.utcnow()}}
+)
+ Step 5: Test the Database
+Run a simple test script to verify connection:
+from db_service import create_session
+print(create_session("user123", "Software Engineer Intern", "Google", []))
+Verify that a document appears in Atlas.
+Once confirmed, push your DB connection and helper functions to GitHub.
+1.
+2.
+3.
+4
+
