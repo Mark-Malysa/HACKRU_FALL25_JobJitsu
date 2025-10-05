@@ -1,4 +1,4 @@
-// src/app/interview/session/[id]/page.tsx (Updated for red/black theme)
+// src/app/interview/session/[id]/page.tsx
 "use client";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,8 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { use } from "react";
 import { apiService } from "@/services/api";
 import { useSession } from "@supabase/auth-helpers-react";
+import { Mic, MicOff } from "lucide-react"; 
+import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 
 // Utility to play audio from base64 string
 function playAudioFromBase64(base64String: string) {
@@ -22,7 +24,6 @@ function playAudioFromBase64(base64String: string) {
     console.error("Audio playback error:", err);
   });
 }
-
 
 type Message = {
   role: "recruiter" | "you";
@@ -56,7 +57,6 @@ async function submitFollowupAnswer(id: string, answer: string, session: any) {
   return await apiService.submitFollowupAnswer(id, answer, session);
 }
 
-
 // Feedback type with audio_b64
 type FeedbackResponse = {
   feedback: string;
@@ -74,9 +74,6 @@ async function completeSession(id: string) {
   return res.json();
 }
 
-
-
-
 export default function SessionPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const session = useSession();
@@ -87,6 +84,18 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
   const [isFollowupPhase, setIsFollowupPhase] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const router = useRouter();
+
+  const {
+    text: transcribedText,
+    isListening,
+    startListening,
+    stopListening,
+    hasRecognitionSupport,
+  } = useSpeechRecognition();
+
+  useEffect(() => {
+    setAnswer(transcribedText);
+  }, [transcribedText]);
 
   const { data: nextQuestion, isLoading: loadingNext } = useQuery<NextQuestion>({
     queryKey: ["nextQuestion", id, questionCount],
@@ -103,7 +112,6 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
       console.log(`Answer submitted! Question count: ${newQuestionCount}/3, Follow-up phase: ${isFollowupPhase}`);
       toast.success("Answer submitted!");
       
-      // After 3rd question, ask follow-up question
       if (newQuestionCount >= 3 && !isFollowupPhase) {
         console.log("All 3 questions completed, asking follow-up question...");
         setIsFollowupPhase(true);
@@ -114,23 +122,19 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
           console.error("Error fetching followup:", error);
         }
       } 
-      // After follow-up answer, generate feedback
       else if (isFollowupPhase && !isCompleted) {
         console.log("Follow-up answered, submitting answer and generating feedback...");
         setIsCompleted(true);
         try {
-          // First submit the follow-up answer
           await submitFollowupAnswer(id, answer, session);
           console.log("Follow-up answer submitted successfully");
 
-          // Then generate feedback
           const feedback = await fetchFeedback(id, session);
           console.log("Frontend received feedback:", feedback);
           console.log("Feedback type:", typeof feedback.feedback);
           console.log("Feedback content:", feedback.feedback.substring(0, 200));
           setMessages((m) => [...m, { role: "recruiter", text: `Here's your interview feedback (Score: ${feedback.score}/10):\n\n${feedback.feedback}`, feedback }]);
 
-          // Play feedback audio if present
           if (feedback.audio_b64) {
             console.log("Playing feedback audio...");
             playAudioFromBase64(feedback.audio_b64);
@@ -154,7 +158,6 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
     }
   }, [nextQuestion, questionCount]);
 
-  // Play audio when nextQuestion.audio_b64 is present
   useEffect(() => {
     if (nextQuestion && nextQuestion.audio_b64) {
       console.log("Playing audio for question...");
@@ -172,7 +175,7 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
     if (!answer.trim()) return;
     const lastQ = messages[messages.length - 1]?.text;
     setMessages((m) => [...m, { role: "you", text: answer }]);
-    // Get the current question number from the query data
+    
     const currentQuestionNumber = nextQuestion?.question_number || 1;
     mutation.mutate({ id: id, questionNumber: currentQuestionNumber, userAnswerText: answer, session: session });
   };
@@ -190,10 +193,6 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [answer]);
-
-
-  // Instead of hiding the chatbox, show a spinner overlay or disable input when loadingNext
-  // We'll use a loading overlay inside the chat container
 
   return (
     <>
@@ -370,6 +369,52 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
             gap: 1rem;
         }
 
+        .mic-button {
+          background: transparent;
+          border: 2px solid var(--border);
+          border-radius: 50%;
+          width: 50px;
+          height: 50px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .mic-button:hover {
+          border-color: var(--primary);
+          background: rgba(255, 0, 0, 0.1);
+        }
+
+        .mic-button:active {
+          transform: scale(0.95);
+        }
+
+        .mic-button.listening {
+          background: var(--primary);
+          border-color: var(--primary);
+          animation: pulse-mic 1.5s infinite;
+        }
+
+        .mic-button.listening:hover {
+          background: var(--accent);
+        }
+        
+        @keyframes pulse-mic {
+          0% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7); }
+          70% { box-shadow: 0 0 0 15px rgba(255, 0, 0, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); }
+        }
+
+        .mic-icon {
+          color: var(--foreground);
+        }
+        
+        .mic-button.listening .mic-icon {
+          color: white;
+        }
+
         .submit-button {
             background: linear-gradient(135deg, var(--primary), var(--accent));
             color: white;
@@ -478,18 +523,19 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
             <div className="interview-header">
               <h1 className="interview-title">Interview Session</h1>
               <div className="header-actions">
-                {/* <button onClick={handleComplete} className="end-session-button">
-          End Session
-                </button> */}
+                <PersonaChip company="Google" role="SWE Intern" biasMode={persona?.bias_mode} />
+                <Button onClick={handleComplete} variant="destructive" className="bg-destructive text-destructive-foreground">
+                   End Session
+                </Button>
               </div>
-      </div>
+            </div>
 
             {/* Chat Messages */}
             <div className="chat-container">
               <div className="chat-messages">
-        {messages.map((m, i) => (
-          <ChatBubble key={i} role={m.role} text={m.text} voiceUrl={m.voiceUrl ?? undefined} feedback={m.feedback} />
-        ))}
+                {messages.map((m, i) => (
+                  <ChatBubble key={i} role={m.role} text={m.text} voiceUrl={m.voiceUrl ?? undefined} feedback={m.feedback} />
+                ))}
                 {mutation.isPending && (
                   <div className="typing-indicator">
                     <span>Processing your answer</span>
@@ -501,13 +547,13 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
                   </div>
                 )}
               </div>
-      </div>
+            </div>
 
             {/* Answer Input */}
             <div className="answer-section">
               <textarea
-          value={answer}
-          onChange={(e) => setAnswer(e.target.value)}
+                value={answer}
+                onChange={(e) => setAnswer(e.target.value)}
                 placeholder={isCompleted ? "Interview completed! Thank you for your time." : "Type your answer here... Use the STAR method (Situation, Task, Action, Result) for best results."}
                 className="answer-textarea"
                 disabled={mutation.isPending || isCompleted}
@@ -520,26 +566,41 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
                      "Press Cmd+Enter to submit"}
                   </span>
                 </div>
-                <button 
-                  onClick={handleSubmit} 
-                  disabled={mutation.isPending || !answer.trim() || isCompleted} 
-                  className="submit-button"
-                >
-                  {isCompleted ? 'Interview Completed' : (mutation.isPending ? 'Submitting...' : 'Submit Answer')}
-                </button>
-        </div>
-      </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  {hasRecognitionSupport && !isCompleted && (
+                    <button
+                      onClick={isListening ? stopListening : startListening}
+                      className={`mic-button ${isListening ? 'listening' : ''}`}
+                      disabled={mutation.isPending}
+                    >
+                      {isListening ? (
+                        <Mic size={20} className="mic-icon" />
+                      ) : (
+                        <MicOff size={20} className="mic-icon" />
+                      )}
+                    </button>
+                  )}
+                  <Button 
+                    onClick={handleSubmit} 
+                    disabled={mutation.isPending || !answer.trim() || isCompleted} 
+                    className="submit-button"
+                  >
+                    {isCompleted ? 'Interview Completed' : (mutation.isPending ? 'Submitting...' : 'Submit Answer')}
+                  </Button>
+                </div>
+              </div>
+            </div>
 
             {/* Feedback Section */}
-      {messages.some((m) => m.feedback) && (
+            {messages.some((m) => m.feedback) && (
               <div className="feedback-section">
                 <ScoreCard 
                   rubric={messages[messages.length - 1]?.feedback?.rubric || {}} 
                   score_overall={messages[messages.length - 1]?.feedback?.score_overall || 0} 
                 />
-        </div>
-      )}
-    </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </>
