@@ -27,7 +27,7 @@ def generate_questions(role: str, company: str):
         }}
     """
 
-    model = genai.GenerativeModel("gemini-2.5-pro")
+    model = genai.GenerativeModel("gemini-2.0-flash-001")
     response = model.generate_content(prompt)
     return response.text
 
@@ -51,7 +51,7 @@ def generate_followup(qa_history: list):
       "followup_answer": ""
     }}
     """
-    model = genai.GenerativeModel("gemini-2.5-pro")
+    model = genai.GenerativeModel("gemini-2.0-flash-001")
     response = model.generate_content(prompt)
     return response.text.strip()
 
@@ -65,7 +65,7 @@ def generate_feedback(qa_history: list):
     "score": integer, "description": "<description>"
     Make sure the description is formatted so it gives overall feedback and then a breakdown of each question and answer
     """
-    model = genai.GenerativeModel("gemini-2.5-pro")
+    model = genai.GenerativeModel("gemini-2.0-flash-001")
     response = model.generate_content(prompt)
     return response.text.strip()
 

@@ -33,6 +33,10 @@ async function fetchFollowup(id: string, session: any) {
   return await apiService.getFollowup(id, session);
 }
 
+async function submitFollowupAnswer(id: string, answer: string, session: any) {
+  return await apiService.submitFollowupAnswer(id, answer, session);
+}
+
 async function fetchFeedback(id: string, session: any) {
   return await apiService.getFeedback(id, session);
 }
@@ -84,13 +88,18 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
       } 
       // After follow-up answer, generate feedback
       else if (isFollowupPhase && !isCompleted) {
-        console.log("Follow-up answered, generating feedback...");
+        console.log("Follow-up answered, submitting answer and generating feedback...");
         setIsCompleted(true);
         try {
+          // First submit the follow-up answer
+          await submitFollowupAnswer(id, answer, session);
+          console.log("Follow-up answer submitted successfully");
+          
+          // Then generate feedback
           const feedback = await fetchFeedback(id, session);
           setMessages((m) => [...m, { role: "recruiter", text: `Feedback: ${feedback.feedback}`, feedback }]);
         } catch (error) {
-          console.error("Error fetching feedback:", error);
+          console.error("Error submitting follow-up answer or fetching feedback:", error);
         }
       } else {
         console.log(`Still need ${3 - newQuestionCount} more questions`);

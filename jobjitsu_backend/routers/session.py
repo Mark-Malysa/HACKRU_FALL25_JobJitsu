@@ -41,13 +41,29 @@ async def start_session(role: str, company: str, current_user=Depends(get_curren
         #     questions_dict[f"answer{i}"] = ""  # Initialize empty answers
         
         # new_session["questions"] = questions_dict
+        json_match = re.search(r"\{.*\}", questions_list, re.DOTALL)
+        if not json_match:
+            raise ValueError("No JSON object found in Gemini output.")
+        
+        clean_output = json_match.group(0).strip()
 
-        questions_dict = json.loads(questions_list)
+        # 2️⃣ Fix missing commas between key-value pairs
+        # e.g. turns: "skill?"\n  "answer3" into "skill?",\n  "answer3"
+        clean_output = re.sub(r'"\s*([\r\n]+)\s*"', '", "', clean_output)
+
+        # 3️⃣ Ensure JSON keys and values are properly separated by commas
+        clean_output = re.sub(r'"\s*"answer', '", "answer', clean_output)
+
+        questions_dict = json.loads(clean_output)
+        print(f"Questions dict: {questions_dict}")
+
         new_session["questions"] = questions_dict
+        print(f"New session: {new_session}")
         
         # Get the first question for text-to-speech
         first_question_text = questions_dict.get('question1', "Hello, let's start the interview.")
-        audio_content = await text_to_speech(first_question_text)
+        print(f"First question text: {first_question_text}")
+        #audio_content = await text_to_speech(first_question_text)
     except Exception as e:
         print(f"Error generating questions or audio: {e}")
         # Fallback to mock questions if Gemini fails
@@ -120,23 +136,75 @@ def submit_answer(session_id: str, question_number: int, answer: str):
         raise HTTPException(status_code=500, detail=f"Error saving answer: {str(e)}")
 
 @router.post("/session/{session_id}/followup")
-def followup(session_id: str):
+def followup(session_id: str, current_user=Depends(get_current_user)):
     session = sessions.find_one({"_id": ObjectId(session_id)})
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
 
-    qa_pairs = [(qa["question"], qa["answer"]) for qa in session["answers"]]
-    followup = generate_followup(qa_pairs)
-    sessions.update_one({"_id": ObjectId(session_id)}, {"$set": {"follow_up": followup}})
-    return {"follow_up": followup}
+    # Extract Q&A pairs from the questions object
+    questions = session.get("questions", {})
+    qa_pairs = []
+    for i in range(1, 4):  # Assuming max 3 questions
+        question_key = f"question{i}"
+        answer_key = f"answer{i}"
+        if question_key in questions and answer_key in questions:
+            qa_pairs.append((questions[question_key], questions[answer_key]))
+    
+    print(f"QA pairs for followup: {qa_pairs}")
+    followup_response = generate_followup(qa_pairs)
+    print(f"Followup response: {followup_response}")
+    
+    # Parse the JSON response to extract just the question
+    try:
+        followup_data = json.loads(followup_response)
+        followup_question = followup_data.get("followup_question", "That's interesting! Can you tell me more?")
+    except (json.JSONDecodeError, KeyError) as e:
+        print(f"Error parsing followup response: {e}")
+        followup_question = "That's interesting! Can you tell me more?"
+    
+    # Store the follow-up question in the session
+    sessions.update_one({"_id": ObjectId(session_id)}, {"$set": {"follow_up_question": followup_question, "follow_up_answer": ""}})
+    return {"follow_up": followup_question}
+
+@router.post("/session/{session_id}/followup-answer")
+def submit_followup_answer(session_id: str, answer: str, current_user=Depends(get_current_user)):
+    """Submit the follow-up answer"""
+    try:
+        session = sessions.find_one({"_id": ObjectId(session_id)})
+        if session is None:
+            raise HTTPException(status_code=404, detail="Session not found")
+
+        # Update the follow-up answer in the session
+        sessions.update_one(
+            {"_id": ObjectId(session_id)},
+            {"$set": {"follow_up_answer": answer}}
+        )
+
+        return {"message": "Follow-up answer saved"}
+    except Exception as e:
+        print(f"Error saving follow-up answer: {e}")
+        raise HTTPException(status_code=500, detail=f"Error saving follow-up answer: {str(e)}")
 
 @router.post("/session/{session_id}/feedback")
-def feedback(session_id: str):
+def feedback(session_id: str, current_user=Depends(get_current_user)):
     session = sessions.find_one({"_id": ObjectId(session_id)})
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
 
-    qa_pairs = [(qa["question"], qa["answer"]) for qa in session["answers"]]
+    # Extract Q&A pairs from the questions object
+    questions = session.get("questions", {})
+    qa_pairs = []
+    for i in range(1, 4):  # Assuming max 3 questions
+        question_key = f"question{i}"
+        answer_key = f"answer{i}"
+        if question_key in questions and answer_key in questions:
+            qa_pairs.append((questions[question_key], questions[answer_key]))
+    
+    # Add follow-up Q&A if it exists
+    if session.get("follow_up_question") and session.get("follow_up_answer"):
+        qa_pairs.append((session["follow_up_question"], session["follow_up_answer"]))
+    
+    print(f"QA pairs for feedback: {qa_pairs}")
     feedback_text = generate_feedback(qa_pairs)
 
     sessions.update_one(

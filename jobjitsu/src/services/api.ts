@@ -141,6 +141,25 @@ class ApiService {
     }
   }
 
+  async submitFollowupAnswer(sessionId: string, answer: string, session?: any): Promise<void> {
+    try {
+      const headers = await this.getAuthHeaders(session);
+      
+      const response = await fetch(`${BACKEND_URL}/session/${sessionId}/followup-answer?answer=${encodeURIComponent(answer)}`, {
+        method: 'POST',
+        headers,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('Error submitting follow-up answer:', error);
+      throw error;
+    }
+  }
+
   async getFeedback(sessionId: string, session?: any): Promise<{ feedback: string; score: number }> {
     try {
       const headers = await this.getAuthHeaders(session);
