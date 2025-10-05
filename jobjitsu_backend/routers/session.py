@@ -380,7 +380,7 @@ def extract_score(feedback_text: str) -> float:
         r'score[:\s]*(\d+(?:\.\d+)?)',
         r'(\d+(?:\.\d+)?)\s*out\s*of\s*10'
     ]
-
+ 
     for pattern in score_patterns:
         match = re.search(pattern, feedback_text, re.IGNORECASE)
         if match:
