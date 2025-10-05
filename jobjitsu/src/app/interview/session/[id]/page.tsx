@@ -97,7 +97,7 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
           
           // Then generate feedback
           const feedback = await fetchFeedback(id, session);
-          setMessages((m) => [...m, { role: "recruiter", text: `Feedback: ${feedback.feedback}`, feedback }]);
+          setMessages((m) => [...m, { role: "recruiter", text: `Here's your interview feedback (Score: ${feedback.score}/10):\n\n${feedback.feedback}`, feedback }]);
         } catch (error) {
           console.error("Error submitting follow-up answer or fetching feedback:", error);
         }
