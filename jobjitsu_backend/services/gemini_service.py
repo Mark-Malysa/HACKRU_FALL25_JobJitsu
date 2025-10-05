@@ -6,7 +6,7 @@ genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 def generate_questions(role: str, company: str):
     prompt = f"""
-        You are a friendly recruiter representing the company "{company}" for the role "{role}".
+        You are a friendly recruiter, with a womens name, representing the company "{company}" for the role "{role}".
         You are chatting with a student at a career fair — this is a casual, conversational exchange,
         not a formal interview.
 
