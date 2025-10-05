@@ -77,7 +77,8 @@ export default function Profile() {
         throw new Error('No authentication token available');
       }
       
-      const response = await fetch(`http://localhost:8000/api/user/stats`, {
+      const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000/api";
+      const response = await fetch(`${BASE_URL}/user/stats`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
