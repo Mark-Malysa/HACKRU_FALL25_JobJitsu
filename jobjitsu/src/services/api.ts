@@ -119,7 +119,7 @@ class ApiService {
     }
   }
 
-  async getFollowup(sessionId: string, session?: any): Promise<string> {
+  async getFollowup(sessionId: string, session?: any): Promise<{ follow_up: string; audio_b64?: string }> {
     try {
       const headers = await this.getAuthHeaders(session);
       
@@ -134,7 +134,9 @@ class ApiService {
       }
 
       const data = await response.json();
-      return data.follow_up;
+      console.log('ApiService.getFollowup raw:', data);
+      // Return as-is to avoid key mismatch issues
+      return data;
     } catch (error) {
       console.error('Error getting followup:', error);
       throw error;

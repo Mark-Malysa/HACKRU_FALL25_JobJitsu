@@ -1,6 +1,7 @@
 from unittest import result
-from fastapi import APIRouter, HTTPException, Header
+from fastapi import APIRouter, HTTPException, Header, Depends
 from services.auth_service import signup_user, login_user, verify_token
+from services.auth_guard import get_current_user
 import sys
 import os
 from dotenv import load_dotenv
@@ -138,3 +139,73 @@ def sync_user(user_data: dict):
 
 # Note: OAuth authentication is handled by Supabase on the frontend
 # This backend syncs OAuth users with MongoDB for session management
+
+
+@router.get("/user/stats")
+def get_user_stats(current_user=Depends(get_current_user)):
+    """Get user statistics and recent sessions"""
+    try:
+        if db is None:
+            raise HTTPException(status_code=500, detail="Database not configured")
+
+        # Extract user ID from current_user
+        user_id = None
+        if hasattr(current_user, 'user') and hasattr(current_user.user, 'id'):
+            user_id = current_user.user.id
+        elif hasattr(current_user, 'id'):
+            user_id = current_user.id
+        elif hasattr(current_user, 'user_id'):
+            user_id = current_user.user_id
+
+        if not user_id:
+            raise HTTPException(status_code=400, detail="User ID not found")
+
+        # Get all sessions for this user
+        sessions_collection = db.sessions
+        user_sessions = list(sessions_collection.find({"user_id": user_id}).sort("created_at", -1))
+
+        # Calculate statistics
+        total_sessions = len(user_sessions)
+        scores = []
+        recent_sessions = []
+
+        for session in user_sessions:
+            # Extract feedback score if available
+            fb = session.get('feedback')
+            if fb and isinstance(fb, dict):
+                score = fb.get('score', 0)
+                if isinstance(score, (int, float)) and score > 0:
+                    scores.append(score)
+
+            # Prepare session data for recent sessions (limit to 10)
+            if len(recent_sessions) < 10:
+                entry = {
+                    "_id": str(session.get('_id')),
+                    "user_id": session.get('user_id'),
+                    "role": session.get('role', 'Unknown'),
+                    "company": session.get('company', 'Unknown'),
+                    "created_at": (session.get('created_at') or datetime.utcnow()).isoformat(),
+                    "follow_up_question": session.get('follow_up_question'),
+                    "follow_up_answer": session.get('follow_up_answer')
+                }
+
+                if fb:
+                    if isinstance(fb, dict):
+                        entry['feedback'] = fb
+                    else:
+                        entry['feedback'] = {"score": 0, "description": str(fb)}
+
+                recent_sessions.append(entry)
+
+        average_score = (sum(scores) / len(scores)) if scores else 0
+        best_score = max(scores) if scores else 0
+
+        return {
+            "totalSessions": total_sessions,
+            "averageScore": round(average_score, 1),
+            "bestScore": best_score,
+            "recentSessions": recent_sessions
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get user stats: {str(e)}")

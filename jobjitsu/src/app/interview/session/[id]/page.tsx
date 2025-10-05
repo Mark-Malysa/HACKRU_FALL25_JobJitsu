@@ -49,9 +49,16 @@ async function submitAnswer({ id, questionNumber, userAnswerText, session }: { i
   return await apiService.submitAnswer(id, questionNumber, userAnswerText, session);
 }
 
-async function fetchFollowup(id: string, session: any) {
+
+type FollowupResult = {
+  follow_up: string;
+  audio_b64?: string;
+};
+
+async function fetchFollowup(id: string, session: any): Promise<FollowupResult> {
   return await apiService.getFollowup(id, session);
 }
+
 
 async function submitFollowupAnswer(id: string, answer: string, session: any) {
   return await apiService.submitFollowupAnswer(id, answer, session);
@@ -116,8 +123,12 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
         console.log("All 3 questions completed, asking follow-up question...");
         setIsFollowupPhase(true);
         try {
-          const followup = await fetchFollowup(id, session);
-          setMessages((m) => [...m, { role: "recruiter", text: followup, voiceUrl: null }]);
+          const { follow_up, audio_b64 } = await fetchFollowup(id, session);
+          console.log("Follow-up received:", follow_up, !!audio_b64 ? "with audio" : "no audio");
+          setMessages((m) => [...m, { role: "recruiter", text: follow_up, voiceUrl: null }]);
+          if (audio_b64) {
+            playAudioFromBase64(audio_b64);
+          }
         } catch (error) {
           console.error("Error fetching followup:", error);
         }
@@ -131,9 +142,29 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
 
           const feedback = await fetchFeedback(id, session);
           console.log("Frontend received feedback:", feedback);
-          console.log("Feedback type:", typeof feedback.feedback);
-          console.log("Feedback content:", feedback.feedback.substring(0, 200));
-          setMessages((m) => [...m, { role: "recruiter", text: `Here's your interview feedback (Score: ${feedback.score}/10):\n\n${feedback.feedback}`, feedback }]);
+          // Normalize feedback in case backend returned a JSON string
+          let score = feedback.score ?? 0;
+          let description: string = typeof feedback.feedback === 'string' ? feedback.feedback : String(feedback.feedback);
+          // Strip code fences if present
+          description = description.replace(/^```(?:json)?\n?|```$/g, "");
+          // Try to parse JSON string
+          try {
+            const parsed = JSON.parse(description);
+            if (parsed && typeof parsed === 'object') {
+              if (typeof parsed.description === 'string') description = parsed.description;
+              if (typeof parsed.score === 'number') score = parsed.score;
+            }
+          } catch (_) {
+            // ignore if not JSON
+          }
+          setMessages((m) => [
+            ...m,
+            {
+              role: "recruiter",
+              text: `Here's your interview feedback (Score: ${score}/10):\n\n${description}`,
+              feedback: { score, description }
+            }
+          ]);
 
           if (feedback.audio_b64) {
             console.log("Playing feedback audio...");
@@ -521,7 +552,7 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
           <div className="content-wrapper">
             {/* Header */}
             <div className="interview-header">
-              <h1 className="interview-title">Interview Session</h1>
+              {/* <h1 className="interview-title">Interview Session</h1> */}
               <div className="header-actions">
                 <PersonaChip company="Google" role="SWE Intern" biasMode={persona?.bias_mode} />
                 <Button onClick={handleComplete} variant="destructive" className="bg-destructive text-destructive-foreground">
@@ -561,7 +592,7 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
               <div className="answer-actions">
                 <div className="typing-indicator">
                   <span>
-                    {isCompleted ? "Interview completed! Check your feedback below." : 
+                    {isCompleted ? "Interview completed! Check your feedback above." : 
                      isFollowupPhase ? "This is a follow-up question. Press Cmd+Enter to submit." :
                      "Press Cmd+Enter to submit"}
                   </span>
