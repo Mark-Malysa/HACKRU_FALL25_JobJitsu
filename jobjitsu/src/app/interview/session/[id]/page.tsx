@@ -125,6 +125,9 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
 
           // Then generate feedback
           const feedback = await fetchFeedback(id, session);
+          console.log("Frontend received feedback:", feedback);
+          console.log("Feedback type:", typeof feedback.feedback);
+          console.log("Feedback content:", feedback.feedback.substring(0, 200));
           setMessages((m) => [...m, { role: "recruiter", text: `Here's your interview feedback (Score: ${feedback.score}/10):\n\n${feedback.feedback}`, feedback }]);
 
           // Play feedback audio if present
