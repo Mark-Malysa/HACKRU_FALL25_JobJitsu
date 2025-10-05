@@ -1,5 +1,7 @@
+import json
 from fastapi import APIRouter, Depends, HTTPException
 from flask_login import current_user
+from jobjitsu_backend.services.elevenlabs_service import text_to_speech
 from services.auth_guard import get_current_user
 import sys
 import os
@@ -15,7 +17,7 @@ router = APIRouter()
 sessions = db.sessions if db is not None else None
 
 @router.post("/session/start")
-def start_session(role: str, company: str, current_user=Depends(get_current_user)):
+async def start_session(role: str, company: str, current_user=Depends(get_current_user)):
     print(f"Starting session for user: {current_user}")
     if sessions is None:
         raise HTTPException(status_code=500, detail="Database not configured")
@@ -29,11 +31,15 @@ def start_session(role: str, company: str, current_user=Depends(get_current_user
         "created_at": datetime.utcnow()
     })
 
-    new_session["questions"] = generate_questions(role, company)
+    questions = generate_questions(role, company)
+    new_session["questions"] = json.loads(questions)
+    first_question_text = questions[0]["question1"]
+    audio_content = await text_to_speech(first_question_text)
+
     result = sessions.insert_one(new_session)
     session_id = str(result.inserted_id)
 
-    return {"message": "Session started", "session_id": session_id, "questions": new_session["questions"]}
+    return {"message": "Session started", "session_id": session_id, "questions": questions}
 
 @router.post("/session/answer")
 def submit_answer(session_id: str, question: str, answer: str):

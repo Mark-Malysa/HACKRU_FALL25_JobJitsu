@@ -5,7 +5,7 @@ import re
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 def generate_questions(role: str, company: str):
-    prompt = f"Generate 3 recruiter-style interview questions for a {role} at {company}."
+    prompt = f"You are a recruiter for the role {role} for company {company}. Give me 3 questions that they would ask at a career fair, not at an interview, but do it in a way that sounds like a recruiter talking at a career fair. I also need you to put it only in json format, with no other text outside of it. For example: {{\"questions\": {{  \n   \"question1\": \"Hi, my name is Bob! Tell me about yourself?\", \"answer1\": \"\",  \n   \"question2\": \"...\", \"answer2\": \"\",  \n   \"question3\": \"...\", \"answer3\": \"\"}}}}"
     model = genai.GenerativeModel("gemini-2.5-pro")
     response = model.generate_content(prompt)
     return response.text.split("\n")
