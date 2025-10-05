@@ -172,9 +172,8 @@ def submit_answer(session_id: str, question_number: int, answer: str):
         print(f"Error saving answer: {e}")
         raise HTTPException(status_code=500, detail=f"Error saving answer: {str(e)}")
 
-
-
-async def followup(session_id: str, current_user=Depends(get_current_user)):
+@router.post("/session/{session_id}/followup")
+def followup(session_id: str, current_user=Depends(get_current_user)):
     print(f"Follow-up request for session_id: {session_id}")
     try:
         session_object_id = ObjectId(session_id)
@@ -182,12 +181,12 @@ async def followup(session_id: str, current_user=Depends(get_current_user)):
     except Exception as e:
         print(f"Error converting session_id to ObjectId: {e}")
         raise HTTPException(status_code=400, detail="Invalid session ID format")
-
+    
     session = sessions.find_one({"_id": session_object_id})
     if session is None:
         print(f"Session not found in database for ID: {session_id}")
         raise HTTPException(status_code=404, detail="Session not found")
-
+    
     print(f"Found session: {session.get('_id')}")
     print(f"Session questions: {session.get('questions', {})}")
 
@@ -199,11 +198,11 @@ async def followup(session_id: str, current_user=Depends(get_current_user)):
         answer_key = f"answer{i}"
         if question_key in questions and answer_key in questions:
             qa_pairs.append((questions[question_key], questions[answer_key]))
-
+    
     print(f"QA pairs for followup: {qa_pairs}")
     followup_response = generate_followup(qa_pairs)
     print(f"Followup response: {followup_response}")
-
+    #
     # Parse the JSON response to extract just the question
     try:
         cleaned = re.sub(r"^```(?:json)?|```$", "", followup_response.strip(), flags=re.MULTILINE)
@@ -218,31 +217,17 @@ async def followup(session_id: str, current_user=Depends(get_current_user)):
     except (json.JSONDecodeError, KeyError) as e:
         print(f"Error parsing followup response: {e}")
         followup_question = "That's interesting! Can you tell me more?"
-
-    # Generate audio for follow-up question
-    audio_b64 = None
-    try:
-        from services.elevenlabs_service import text_to_speech
-        audio_content = await text_to_speech(followup_question)
-        if audio_content:
-            audio_b64 = base64.b64encode(audio_content).decode("utf-8")
-            print(f"[AUDIO DEBUG] Follow-up audio_b64 length: {len(audio_b64)}")
-        else:
-            print("[AUDIO DEBUG] No audio content generated for follow-up.")
-    except Exception as audio_err:
-        print(f"[AUDIO DEBUG] Error generating audio for follow-up: {audio_err}")
-        audio_b64 = None
-
+    
     # Store the follow-up question in the session
     print(f"Storing follow-up question: {followup_question}")
     result = sessions.update_one({"_id": session_object_id}, {"$set": {"follow_up_question": followup_question, "follow_up_answer": ""}})
     print(f"Database update result: {result.modified_count} documents modified")
-
+    
     # Verify the update
     updated_session = sessions.find_one({"_id": session_object_id})
     print(f"Updated session follow-up fields: follow_up_question={updated_session.get('follow_up_question')}, follow_up_answer={updated_session.get('follow_up_answer')}")
-
-    return {"follow_up": followup_question, "audio_b64": audio_b64}
+    
+    return {"follow_up": followup_question}
 
 @router.post("/session/{session_id}/followup-answer")
 def submit_followup_answer(session_id: str, answer: str, current_user=Depends(get_current_user)):
