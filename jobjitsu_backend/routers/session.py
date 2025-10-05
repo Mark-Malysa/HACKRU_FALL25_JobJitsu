@@ -32,40 +32,91 @@ async def start_session(role: str, company: str, current_user=Depends(get_curren
     })
 
     try:
-        questions = generate_questions(role, company)
-        new_session["questions"] = questions  # questions is already a list, no need to parse JSON
+        questions_list = generate_questions(role, company)
+        
+        # Convert list to the JSON structure you showed
+        questions_dict = {}
+        for i, question in enumerate(questions_list[:3], 1):  # Limit to 3 questions
+            questions_dict[f"question{i}"] = question
+            questions_dict[f"answer{i}"] = ""  # Initialize empty answers
+        
+        new_session["questions"] = questions_dict
         
         # Get the first question for text-to-speech
-        first_question_text = questions[0] if questions else "Hello, let's start the interview."
+        first_question_text = questions_list[0] if questions_list else "Hello, let's start the interview."
         audio_content = await text_to_speech(first_question_text)
     except Exception as e:
         print(f"Error generating questions or audio: {e}")
         # Fallback to mock questions if Gemini fails
-        questions = [
-            f"Tell me about yourself and why you're interested in the {role} position at {company}.",
-            f"What experience do you have with the technologies commonly used in {role} roles?",
-            f"How would you approach solving a complex problem in your role as a {role}?"
-        ]
-        new_session["questions"] = questions
+        questions_dict = {
+            "question1": f"Tell me about yourself and why you're interested in the {role} position at {company}.",
+            "answer1": "",
+            "question2": f"What experience do you have with the technologies commonly used in {role} roles?",
+            "answer2": "",
+            "question3": f"How would you approach solving a complex problem in your role as a {role}?",
+            "answer3": ""
+        }
+        new_session["questions"] = questions_dict
         audio_content = None
 
     result = sessions.insert_one(new_session)
     session_id = str(result.inserted_id)
 
-    return {"message": "Session started", "session_id": session_id, "questions": questions}
+    return {"message": "Session started", "session_id": session_id, "questions": new_session["questions"]}
 
-@router.post("/session/answer")
-def submit_answer(session_id: str, question: str, answer: str):
-    session = sessions.find_one({"_id": ObjectId(session_id)})
-    if session is None:
-        raise HTTPException(status_code=404, detail="Session not found")
+@router.get("/session/{session_id}/next")
+def get_next_question(session_id: str):
+    """Get the next unanswered question from the session"""
+    try:
+        session = sessions.find_one({"_id": ObjectId(session_id)})
+        if session is None:
+            raise HTTPException(status_code=404, detail="Session not found")
+        
+        questions = session.get("questions", {})
+        
+        # Find the first question without an answer
+        for i in range(1, 4):  # Assuming max 3 questions based on your structure
+            question_key = f"question{i}"
+            answer_key = f"answer{i}"
+            
+            if question_key in questions and questions.get(answer_key, "").strip() == "":
+                return {
+                    "question_number": i,
+                    "question": questions[question_key],
+                    "is_last_question": i == 3  # Assuming 3 total questions
+                }
+        
+        # If all questions are answered
+        return {
+            "message": "All questions completed",
+            "is_complete": True
+        }
+        
+    except Exception as e:
+        print(f"Error getting next question: {e}")
+        raise HTTPException(status_code=500, detail=f"Error retrieving next question: {str(e)}")
 
-    session["answers"].append({"question": question, "answer": answer})
-    sessions.update_one({"_id": ObjectId(session_id)}, {"$set": {"answers": session["answers"]}})
+@router.post("/session/{session_id}/answer")
+def submit_answer(session_id: str, question_number: int, answer: str):
+    """Submit an answer for a specific question number"""
+    try:
+        session = sessions.find_one({"_id": ObjectId(session_id)})
+        if session is None:
+            raise HTTPException(status_code=404, detail="Session not found")
 
-    return {"message": "Answer saved"}
+        # Update the specific answer in the questions structure
+        answer_key = f"answer{question_number}"
+        sessions.update_one(
+            {"_id": ObjectId(session_id)},
+            {"$set": {f"questions.{answer_key}": answer}}
+        )
 
-@router.post("/session/followup")
+        return {"message": "Answer saved"}
+    except Exception as e:
+        print(f"Error saving answer: {e}")
+        raise HTTPException(status_code=500, detail=f"Error saving answer: {str(e)}")
+
+@router.post("/session/{session_id}/followup")
 def followup(session_id: str):
     session = sessions.find_one({"_id": ObjectId(session_id)})
     if session is None:
@@ -76,7 +127,7 @@ def followup(session_id: str):
     sessions.update_one({"_id": ObjectId(session_id)}, {"$set": {"follow_up": followup}})
     return {"follow_up": followup}
 
-@router.post("/session/feedback")
+@router.post("/session/{session_id}/feedback")
 def feedback(session_id: str):
     session = sessions.find_one({"_id": ObjectId(session_id)})
     if session is None:

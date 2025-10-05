@@ -79,11 +79,32 @@ class ApiService {
     }
   }
 
-  async submitAnswer(sessionId: string, question: string, answer: string): Promise<void> {
+  async getNextQuestion(sessionId: string): Promise<{question_number: number, question: string, is_last_question: boolean, is_complete?: boolean}> {
     try {
       const headers = await this.getAuthHeaders();
       
-      const response = await fetch(`${BACKEND_URL}/session/answer?session_id=${encodeURIComponent(sessionId)}&question=${encodeURIComponent(question)}&answer=${encodeURIComponent(answer)}`, {
+      const response = await fetch(`${BACKEND_URL}/session/${sessionId}/next`, {
+        method: 'GET',
+        headers,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting next question:', error);
+      throw error;
+    }
+  }
+
+  async submitAnswer(sessionId: string, questionNumber: number, answer: string): Promise<void> {
+    try {
+      const headers = await this.getAuthHeaders();
+      
+      const response = await fetch(`${BACKEND_URL}/session/${sessionId}/answer?question_number=${questionNumber}&answer=${encodeURIComponent(answer)}`, {
         method: 'POST',
         headers,
       });
@@ -102,7 +123,7 @@ class ApiService {
     try {
       const headers = await this.getAuthHeaders();
       
-      const response = await fetch(`${BACKEND_URL}/session/followup?session_id=${encodeURIComponent(sessionId)}`, {
+      const response = await fetch(`${BACKEND_URL}/session/${sessionId}/followup`, {
         method: 'POST',
         headers,
       });
@@ -124,7 +145,7 @@ class ApiService {
     try {
       const headers = await this.getAuthHeaders();
       
-      const response = await fetch(`${BACKEND_URL}/session/feedback?session_id=${encodeURIComponent(sessionId)}`, {
+      const response = await fetch(`${BACKEND_URL}/session/${sessionId}/feedback`, {
         method: 'POST',
         headers,
       });
