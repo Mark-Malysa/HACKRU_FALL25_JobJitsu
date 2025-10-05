@@ -27,7 +27,7 @@ async def start_session(role: str, company: str, current_user=Depends(get_curren
     print(f"Current user object: {current_user}")
     print(f"Current user type: {type(current_user)}")
     print(f"Current user attributes: {dir(current_user) if hasattr(current_user, '__dict__') else 'No attributes'}")
-    
+
     # Try different ways to get the user ID
     user_id = None
     if hasattr(current_user, 'user') and hasattr(current_user.user, 'id'):
@@ -41,7 +41,7 @@ async def start_session(role: str, company: str, current_user=Depends(get_curren
         print(f"Found user ID via current_user.user_id: {user_id}")
     else:
         print("Could not find user ID in current_user object")
-    
+
     new_session = session_schema()
     new_session.update({
         "user_id": user_id,
@@ -49,7 +49,7 @@ async def start_session(role: str, company: str, current_user=Depends(get_curren
         "company": company,
         "created_at": datetime.utcnow()
     })
-    
+
     print(f"Session being created with user_id: {user_id}")
 
     try:
@@ -60,12 +60,12 @@ async def start_session(role: str, company: str, current_user=Depends(get_curren
         # for i, question in enumerate(questions_list[:3], 1):  # Limit to 3 questions
         #     questions_dict[f"question{i}"] = question
         #     questions_dict[f"answer{i}"] = ""  # Initialize empty answers
-        
+
         # new_session["questions"] = questions_dict
         json_match = re.search(r"\{.*\}", questions_list, re.DOTALL)
         if not json_match:
             raise ValueError("No JSON object found in Gemini output.")
-        
+
         clean_output = json_match.group(0).strip()
 
         # 2️⃣ Fix missing commas between key-value pairs
@@ -80,7 +80,7 @@ async def start_session(role: str, company: str, current_user=Depends(get_curren
 
         new_session["questions"] = questions_dict
         print(f"New session: {new_session}")
-        
+
         # Get the first question for text-to-speech
         first_question_text = questions_dict.get('question1', "Hello, let's start the interview.")
         print(f"First question text: {first_question_text}")
@@ -103,7 +103,7 @@ async def start_session(role: str, company: str, current_user=Depends(get_curren
     result = sessions.insert_one(new_session)
     session_id = str(result.inserted_id)
     print(f"Session inserted with ID: {session_id}")
-    
+
     # Verify the session was saved correctly
     saved_session = sessions.find_one({"_id": result.inserted_id})
     print(f"Saved session user_id: {saved_session.get('user_id') if saved_session else 'Session not found'}")
@@ -181,12 +181,12 @@ def followup(session_id: str, current_user=Depends(get_current_user)):
     except Exception as e:
         print(f"Error converting session_id to ObjectId: {e}")
         raise HTTPException(status_code=400, detail="Invalid session ID format")
-    
+
     session = sessions.find_one({"_id": session_object_id})
     if session is None:
         print(f"Session not found in database for ID: {session_id}")
         raise HTTPException(status_code=404, detail="Session not found")
-    
+
     print(f"Found session: {session.get('_id')}")
     print(f"Session questions: {session.get('questions', {})}")
 
@@ -198,11 +198,11 @@ def followup(session_id: str, current_user=Depends(get_current_user)):
         answer_key = f"answer{i}"
         if question_key in questions and answer_key in questions:
             qa_pairs.append((questions[question_key], questions[answer_key]))
-    
+
     print(f"QA pairs for followup: {qa_pairs}")
     followup_response = generate_followup(qa_pairs)
     print(f"Followup response: {followup_response}")
-    
+
     # Parse the JSON response to extract just the question
     try:
         cleaned = re.sub(r"^```(?:json)?|```$", "", followup_response.strip(), flags=re.MULTILINE)
@@ -217,16 +217,16 @@ def followup(session_id: str, current_user=Depends(get_current_user)):
     except (json.JSONDecodeError, KeyError) as e:
         print(f"Error parsing followup response: {e}")
         followup_question = "That's interesting! Can you tell me more?"
-    
+
     # Store the follow-up question in the session
     print(f"Storing follow-up question: {followup_question}")
     result = sessions.update_one({"_id": session_object_id}, {"$set": {"follow_up_question": followup_question, "follow_up_answer": ""}})
     print(f"Database update result: {result.modified_count} documents modified")
-    
+
     # Verify the update
     updated_session = sessions.find_one({"_id": session_object_id})
     print(f"Updated session follow-up fields: follow_up_question={updated_session.get('follow_up_question')}, follow_up_answer={updated_session.get('follow_up_answer')}")
-    
+
     return {"follow_up": followup_question}
 
 @router.post("/session/{session_id}/followup-answer")
@@ -240,7 +240,7 @@ def submit_followup_answer(session_id: str, answer: str, current_user=Depends(ge
         except Exception as e:
             print(f"Error converting session_id to ObjectId: {e}")
             raise HTTPException(status_code=400, detail="Invalid session ID format")
-        
+
         session = sessions.find_one({"_id": session_object_id})
         if session is None:
             print(f"Session not found in database for ID: {session_id}")
@@ -253,7 +253,7 @@ def submit_followup_answer(session_id: str, answer: str, current_user=Depends(ge
             {"$set": {"follow_up_answer": answer}}
         )
         print(f"Follow-up answer update result: {result.modified_count} documents modified")
-        
+
         # Verify the update
         updated_session = sessions.find_one({"_id": session_object_id})
         print(f"Updated session follow-up answer: {updated_session.get('follow_up_answer')}")
@@ -264,7 +264,8 @@ def submit_followup_answer(session_id: str, answer: str, current_user=Depends(ge
         raise HTTPException(status_code=500, detail=f"Error saving follow-up answer: {str(e)}")
 
 @router.post("/session/{session_id}/feedback")
-def feedback(session_id: str, current_user=Depends(get_current_user)):
+
+async def feedback(session_id: str, current_user=Depends(get_current_user)):
     session = sessions.find_one({"_id": ObjectId(session_id)})
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -277,15 +278,15 @@ def feedback(session_id: str, current_user=Depends(get_current_user)):
         answer_key = f"answer{i}"
         if question_key in questions and answer_key in questions:
             qa_pairs.append((questions[question_key], questions[answer_key]))
-    
+
     # Add follow-up Q&A if it exists
     if session.get("follow_up_question") and session.get("follow_up_answer"):
         qa_pairs.append((session["follow_up_question"], session["follow_up_answer"]))
-    
+
     print(f"QA pairs for feedback: {qa_pairs}")
     feedback_response = generate_feedback(qa_pairs)
     print(f"Feedback response: {feedback_response}")
-    
+
     # Parse the JSON response to extract score and description
     try:
         # Clean up the response to extract JSON
@@ -309,15 +310,31 @@ def feedback(session_id: str, current_user=Depends(get_current_user)):
             "score": extract_score(feedback_response) or 5,
             "description": feedback_response
         }
-    
+
+    # Generate audio for feedback description
+    audio_b64 = None
+    try:
+        from services.elevenlabs_service import text_to_speech
+        audio_content = await text_to_speech(feedback_data["description"])
+        if audio_content:
+            audio_b64 = base64.b64encode(audio_content).decode("utf-8")
+            print(f"[AUDIO DEBUG] Feedback audio_b64 length: {len(audio_b64)}")
+        else:
+            print("[AUDIO DEBUG] No audio content generated for feedback.")
+    except Exception as audio_err:
+        print(f"[AUDIO DEBUG] Error generating audio for feedback: {audio_err}")
+        audio_b64 = None
+
     # Store the parsed feedback in the session
     sessions.update_one(
         {"_id": ObjectId(session_id)},
         {"$set": {"feedback": feedback_data}}
     )
 
-    print(f"Returning feedback: description={feedback_data.get('description', 'NO DESCRIPTION')}, score={feedback_data.get('score', 'NO SCORE')}")
-    return {"feedback": feedback_data["description"], "score": feedback_data["score"]}
+    print(f"Returning feedback: description={feedback_data.get('description', 'NO DESCRIPTION')}, score={feedback_data.get('score', 'NO SCORE')}, audio_b64={'present' if audio_b64 else 'absent'}")
+    print(f"Feedback data type: {type(feedback_data.get('description'))}")
+    print(f"Feedback data content: {feedback_data.get('description')[:200]}...")
+    return {"feedback": feedback_data["description"], "score": feedback_data["score"], "audio_b64": audio_b64}
 
 def extract_score(feedback_text: str) -> float:
     """Extract numerical score from feedback text"""
@@ -328,11 +345,11 @@ def extract_score(feedback_text: str) -> float:
         r'score[:\s]*(\d+(?:\.\d+)?)',
         r'(\d+(?:\.\d+)?)\s*out\s*of\s*10'
     ]
-    
+
     for pattern in score_patterns:
         match = re.search(pattern, feedback_text, re.IGNORECASE)
         if match:
             return float(match.group(1))
-    
+
     # Default score if no pattern found
     return 7.0
