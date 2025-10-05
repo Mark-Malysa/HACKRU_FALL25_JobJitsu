@@ -46,7 +46,7 @@ async def start_session(role: str, company: str, current_user=Depends(get_curren
         new_session["questions"] = questions_dict
         
         # Get the first question for text-to-speech
-        first_question_text = questions_dict[0]['question1'] if questions_dict[0] else "Hello, let's start the interview."
+        first_question_text = questions_dict.get('question1', "Hello, let's start the interview.")
         audio_content = await text_to_speech(first_question_text)
     except Exception as e:
         print(f"Error generating questions or audio: {e}")
