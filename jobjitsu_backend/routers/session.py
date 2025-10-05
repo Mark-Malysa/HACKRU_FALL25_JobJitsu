@@ -1,7 +1,7 @@
 import json
 from fastapi import APIRouter, Depends, HTTPException
 from flask_login import current_user
-from jobjitsu_backend.services.elevenlabs_service import text_to_speech
+from services.elevenlabs_service import text_to_speech
 from services.auth_guard import get_current_user
 import sys
 import os
@@ -31,10 +31,23 @@ async def start_session(role: str, company: str, current_user=Depends(get_curren
         "created_at": datetime.utcnow()
     })
 
-    questions = generate_questions(role, company)
-    new_session["questions"] = json.loads(questions)
-    first_question_text = questions[0]["question1"]
-    audio_content = await text_to_speech(first_question_text)
+    try:
+        questions = generate_questions(role, company)
+        new_session["questions"] = questions  # questions is already a list, no need to parse JSON
+        
+        # Get the first question for text-to-speech
+        first_question_text = questions[0] if questions else "Hello, let's start the interview."
+        audio_content = await text_to_speech(first_question_text)
+    except Exception as e:
+        print(f"Error generating questions or audio: {e}")
+        # Fallback to mock questions if Gemini fails
+        questions = [
+            f"Tell me about yourself and why you're interested in the {role} position at {company}.",
+            f"What experience do you have with the technologies commonly used in {role} roles?",
+            f"How would you approach solving a complex problem in your role as a {role}?"
+        ]
+        new_session["questions"] = questions
+        audio_content = None
 
     result = sessions.insert_one(new_session)
     session_id = str(result.inserted_id)
