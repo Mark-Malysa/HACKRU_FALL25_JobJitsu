@@ -397,8 +397,7 @@ def extract_score(feedback_text: str) -> float:
         r'(\d+(?:\.\d+)?)/10',
         r'Score:\s*(\d+(?:\.\d+)?)',
         r'score[:\s]*(\d+(?:\.\d+)?)',
-        r'(\d+(?:\.\d+)?)\s*out\s*of\s*10',
-        r'["\']?score["\']?[:\s]*(\d+(?:\.\d+)?)'
+        r'(\d+(?:\.\d+)?)\s*out\s*of\s*10'
     ]
 
     for pattern in score_patterns:
