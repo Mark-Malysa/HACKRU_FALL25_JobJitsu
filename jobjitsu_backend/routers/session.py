@@ -311,19 +311,8 @@ async def feedback(session_id: str, current_user=Depends(get_current_user)):
             "description": feedback_response
         }
 
-    # Generate audio for feedback description
-    audio_b64 = None
-    try:
-        from services.elevenlabs_service import text_to_speech
-        audio_content = await text_to_speech(feedback_data["description"])
-        if audio_content:
-            audio_b64 = base64.b64encode(audio_content).decode("utf-8")
-            print(f"[AUDIO DEBUG] Feedback audio_b64 length: {len(audio_b64)}")
-        else:
-            print("[AUDIO DEBUG] No audio content generated for feedback.")
-    except Exception as audio_err:
-        print(f"[AUDIO DEBUG] Error generating audio for feedback: {audio_err}")
-        audio_b64 = None
+    # SKIP TTS for feedback: do not generate audio for feedback
+    audio_b64 = None  # Always None, never call TTS for feedback
 
     # Store the parsed feedback in the session
     sessions.update_one(

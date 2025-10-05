@@ -476,7 +476,7 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
           <div className="content-wrapper">
             {/* Header */}
             <div className="interview-header">
-              <h1 className="interview-title">Interview Session</h1>
+              {/* <h1 className="interview-title">Interview Session</h1> */}
               <div className="header-actions">
                 {/* <button onClick={handleComplete} className="end-session-button">
           End Session
