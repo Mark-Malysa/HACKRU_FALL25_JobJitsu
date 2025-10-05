@@ -10,6 +10,7 @@ import { PersonaChip } from "@/components/PersonaChip";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { use } from "react";
 
 type Message = {
   role: "recruiter" | "you";
@@ -52,7 +53,8 @@ async function completeSession(id: string) {
   return res.json();
 }
 
-export default function SessionPage({ params }: { params: { id: string } }) {
+export default function SessionPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const [messages, setMessages] = useState<Message[]>([]);
   const [answer, setAnswer] = useState("");
   const [persona, setPersona] = useState<any>(null);
@@ -60,8 +62,8 @@ export default function SessionPage({ params }: { params: { id: string } }) {
   const router = useRouter();
 
   const { data: nextQuestion, isLoading: loadingNext } = useQuery({
-    queryKey: ["nextQuestion", params.id, questionCount],
-    queryFn: () => fetchNextQuestion(params.id),
+    queryKey: ["nextQuestion", id, questionCount],
+    queryFn: () => fetchNextQuestion(id),
     enabled: messages.length % 2 === 0,
   });
 
@@ -72,10 +74,10 @@ export default function SessionPage({ params }: { params: { id: string } }) {
       setQuestionCount((prev) => prev + 1);
       toast.success("Answer submitted!");
       if (questionCount + 1 === 3) {
-        const followup = await fetchFollowup(params.id);
+        const followup = await fetchFollowup(id);
         setMessages((m) => [...m, { role: "recruiter", text: followup.questionText, voiceUrl: followup.voiceUrl }]);
       }
-      const feedback = await fetchFeedback(params.id);
+      const feedback = await fetchFeedback(id);
       setMessages((m) => [...m, { role: "recruiter", text: `Feedback: ${feedback.comments}`, feedback }]);
     },
   });
@@ -94,11 +96,11 @@ export default function SessionPage({ params }: { params: { id: string } }) {
     if (!answer.trim()) return;
     const lastQ = messages[messages.length - 1]?.text;
     setMessages((m) => [...m, { role: "you", text: answer }]);
-    mutation.mutate({ id: params.id, questionText: lastQ, userAnswerText: answer });
+    mutation.mutate({ id: id, questionText: lastQ, userAnswerText: answer });
   };
 
   const handleComplete = async () => {
-    const summary = await completeSession(params.id);
+    const summary = await completeSession(id);
     toast.info("Session completed!");
     router.push("/profile");
   };
@@ -137,7 +139,7 @@ export default function SessionPage({ params }: { params: { id: string } }) {
         />
         <div className="flex justify-end space-x-2">
           <Button onClick={handleSubmit} disabled={mutation.isPending} className="button-primary">
-            Submit Answer (⌘ + Enter)
+            Submit Answer
           </Button>
         </div>
       </div>
