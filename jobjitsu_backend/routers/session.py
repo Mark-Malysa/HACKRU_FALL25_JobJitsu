@@ -324,7 +324,7 @@ async def feedback(session_id: str, current_user=Depends(get_current_user)):
             # No JSON object found; fall back to score extraction
             feedback_data = {
                 "score": extract_score(raw) or 5,
-                "description": raw
+                "description": re.search(r'"description":\s*"([^"]*(?:"[^"]*)*)"', raw, re.DOTALL).group(1) if re.search(r'"description":\s*"([^"]*(?:"[^"]*)*)"', raw, re.DOTALL) else raw
             }
 
         # 4) If description itself still contains a JSON block, parse nested
