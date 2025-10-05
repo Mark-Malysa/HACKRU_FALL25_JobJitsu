@@ -478,10 +478,9 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
             <div className="interview-header">
               <h1 className="interview-title">Interview Session</h1>
               <div className="header-actions">
-        <PersonaChip company="Google" role="SWE Intern" biasMode={persona?.bias_mode} />
-                <button onClick={handleComplete} className="end-session-button">
+                {/* <button onClick={handleComplete} className="end-session-button">
           End Session
-                </button>
+                </button> */}
               </div>
       </div>
 
