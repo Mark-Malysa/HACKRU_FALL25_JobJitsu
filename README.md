@@ -4,13 +4,16 @@
 
 **Transform your interview preparation with AI-driven practice sessions that feel like the real thing.**
 
+[![Live Demo](https://img.shields.io/badge/🌐_Demo-JobJitsu.tech-ff0000?style=for-the-badge&logo=vercel&logoColor=white)](https://jobjitsu.tech)
+[![Status](https://img.shields.io/badge/Status-Work_in_Progress-yellow?style=for-the-badge)](https://github.com)
+
 [![Next.js](https://img.shields.io/badge/Next.js-15.5-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19.1-blue?style=for-the-badge&logo=react)](https://react.dev/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104-green?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-green?style=for-the-badge&logo=mongodb)](https://www.mongodb.com/)
 
-*Built for HackRU Fall 2025*
+*Built for HackRU Fall 2025 • [Demo available at JobJitsu.tech](https://jobjitsu.tech) (Some features may be in development)*
 
 </div>
 
@@ -36,6 +39,8 @@
 ## 🎯 Overview
 
 **JobJitsu** is a full-stack AI-powered interview practice platform designed to help students and job seekers prepare for real-world interviews, particularly career fair conversations with recruiters. The platform leverages cutting-edge AI (Google Gemini) to generate contextual interview questions, ElevenLabs for realistic text-to-speech, and provides comprehensive feedback to help users improve their interview skills.
+
+> 🌐 **Demo Application**: A working demo is available at [**JobJitsu.tech**](https://jobjitsu.tech). This is a hackathon project demonstrating the core concept and technical implementation. Some features may have limitations or be under active development. For the full experience, consider running the application locally using the setup instructions below.
 
 ### Why JobJitsu?
 
@@ -327,6 +332,8 @@ HACKRU_FALL25_JobJitsu/
 
 ## 🚀 Getting Started
 
+> 💡 **Demo Available**: A demo version is hosted at [**JobJitsu.tech**](https://jobjitsu.tech) for quick exploration. Note: Some features may have limitations. For the complete, fully-functional experience, we recommend running the application locally using the instructions below.
+
 ### **Prerequisites**
 
 - Node.js 18+ and npm/yarn
@@ -582,9 +589,11 @@ Built with ❤️ by the JobJitsu team for HackRU Fall 2025.
 
 ## 📞 Contact & Links
 
-- **Live Demo**: [Coming Soon]
+- **🌐 Demo Application**: [**JobJitsu.tech**](https://jobjitsu.tech) - Explore the demo (some features may be limited)
 - **Backend API Docs**: `http://localhost:8000/docs` (when running locally)
 - **Issues**: [GitHub Issues](https://github.com/yourusername/jobjitsu/issues)
+
+> ⚠️ **Note**: The hosted demo at JobJitsu.tech is a proof-of-concept demonstration. Some features may not be fully functional or may have errors. For the best experience and to see all features working correctly, please run the application locally following the setup instructions above.
 
 ---
 
